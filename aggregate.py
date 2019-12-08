@@ -58,14 +58,13 @@ def wantSee(item):
 		return False
 	return True
 
-
 r = None
 for page in range(1, LIMIT):
 	url = 'https://www.douban.com/?p=' + str(page)
 	b = BeautifulSoup(getUrl(url), 'html.parser')
 	if not r:
 		r = BeautifulSoup(getUrl(url), 'html.parser')
-		r_center = BeautifulSoup('<div id="wrapper" style="width:800px"></div>', features="lxml")
+		r_center = BeautifulSoup('<div id="wrapper" style="max-width:800px"></div>', features="lxml")
 		r.find('div', {'id': 'wrapper'}).replace_with(r_center)
 		r.find('div', class_='global-nav').decompose()
 		r.find('div', class_='nav').decompose()
@@ -78,7 +77,13 @@ for page in range(1, LIMIT):
 			r_center.append(wr)
 
 for x in r.find_all('div', class_='actions'):
-	x.decompose()
+	for y in x.find_all('a', class_='btn'):
+		y.decompose()
+	for y in x.find_all('a', class_='like-count'):
+		y.decompose()
+
+for x in r.find_all('blockquote'):
+	x['style'] = "max-height: 400px; display: block;"
 
 r = str(r)
 with open('result.html', 'w') as f:
