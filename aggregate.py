@@ -41,6 +41,11 @@ def getUrl(url):
 	else:
 		return getUrlContent(url)
 
+def wantSee(item):
+	if not item.find('blockquote') and item.find('div', class_='bd book'):
+		return False
+	return True
+
 r = None
 for page in range(1, LIMIT):
 	url = 'https://www.douban.com/?p=' + str(page)
@@ -54,7 +59,7 @@ for page in range(1, LIMIT):
 	r_center = r.find('div', {'id': 'wrapper'})
 	statuses = b.find('div', {'id': 'statuses'})
 	for item in statuses.find_all('div', class_='status-item'):
-		if not item.find('blockquote') and item.find('div', class_='bd book'):
+		if wantSee(item):
 			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
 			wr.append(item)
 			r_center.append(wr)
