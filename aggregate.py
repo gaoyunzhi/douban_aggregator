@@ -7,7 +7,7 @@ import yaml
 import hashlib
 import sys
 
-LIMIT = 2
+LIMIT = 10
 
 def fact():
 	return BeautifulSoup("<div></div>", features="lxml")
@@ -54,7 +54,8 @@ for page in range(1, LIMIT):
 	r_center = r.find('div', {'id': 'wrapper'})
 	statuses = b.find('div', {'id': 'statuses'})
 	for item in statuses.find_all('div', class_='status-item'):
-		r_center.append(item)
+		if not item.find('div', class_='status-saying'):
+			r_center.append(item)
 
 with open('result.html', 'w') as f:
 	f.write(str(r))
