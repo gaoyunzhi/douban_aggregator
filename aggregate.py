@@ -5,8 +5,12 @@ import requests
 from bs4 import BeautifulSoup
 import yaml
 import hashlib
+import sys
 
 LIMIT = 2
+
+def fact():
+	return BeautifulSoup("<div></div>", features="lxml")
 
 with open('CREDENTIAL.yaml') as f:
     CREDENTIAL = yaml.load(f, Loader=yaml.FullLoader)
@@ -20,7 +24,7 @@ def getUrlContent(url):
 	}
 	return requests.get(url, headers=headers).text
 
-def _cachedContent(url):
+def cachedContent(url):
 	cache = 'tmp_' + hashlib.sha224(url.encode('utf-8')).hexdigest()[:10] + '.html'
 	try:
 		with open(cache) as f:
@@ -33,13 +37,24 @@ def _cachedContent(url):
 
 def getUrl(url):
 	if 'test' in str(sys.argv):
-		content = cachedContent(url)
+		return cachedContent(url)
 	else:
-		content = getUrlContent(url)
+		return getUrlContent(url)
 
+r = None
 for page in range(1, LIMIT):
 	url = 'https://www.douban.com/?p=' + str(page)
 	b = BeautifulSoup(getUrl(url), 'html.parser')
+	if not r:
+		r = BeautifulSoup(getUrl(url), 'html.parser')
+		r_center = BeautifulSoup('<div id="wrapper" style="width:800px"></div>', features="lxml")
+		r.find('div', {'id': 'wrapper'}).replace_with(r_center)
+		r.find('div', class_='global-nav').decompose()
+		r.find('div', class_='nav').decompose()
+	r_center = r.find('div', {'id': 'wrapper'})
 	statuses = b.find('div', {'id': 'statuses'})
-	for item in statuses.find_all('status-item'):
-		print(item.text)
+	for item in statuses.find_all('div', class_='status-item'):
+		r_center.append(item)
+
+with open('result.html', 'w') as f:
+	f.write(str(r))
