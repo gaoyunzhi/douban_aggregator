@@ -41,10 +41,23 @@ def getUrl(url):
 	else:
 		return getUrlContent(url)
 
-def wantSee(item):
-	if not item.find('blockquote') and item.find('div', class_='bd book'):
+def hasQuote(item):
+	if not item.find('blockquote'):
+		return False
+	if len(item.find('blockquote').text) < 10:
 		return False
 	return True
+
+def isBookOrMovie(item):
+	return item.find('div', class_='bd book') or item.find('div', class_='bd movie')
+
+def wantSee(item):
+	if (not hasQuote(item)) and isBookOrMovie(item):
+		return False
+	if '关注了成员:' in item.text:
+		return False
+	return True
+
 
 r = None
 for page in range(1, LIMIT):
@@ -67,5 +80,6 @@ for page in range(1, LIMIT):
 for x in r.find_all('div', class_='actions'):
 	x.decompose()
 
+r = str(r)
 with open('result.html', 'w') as f:
-	f.write(str(r))
+	f.write(r)
