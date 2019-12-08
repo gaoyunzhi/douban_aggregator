@@ -64,7 +64,7 @@ for page in range(1, LIMIT):
 	b = BeautifulSoup(getUrl(url), 'html.parser')
 	if not r:
 		r = BeautifulSoup(getUrl(url), 'html.parser')
-		r_center = BeautifulSoup('<div id="wrapper" style="max-width:800px"></div>', features="lxml")
+		r_center = BeautifulSoup('<div id="wrapper" style="max-width:680px"></div>', features="lxml")
 		r.find('div', {'id': 'wrapper'}).replace_with(r_center)
 		r.find('div', class_='global-nav').decompose()
 		r.find('div', class_='nav').decompose()
@@ -79,8 +79,10 @@ for page in range(1, LIMIT):
 for x in r.find_all('div', class_='actions'):
 	for y in x.find_all('a', class_='btn'):
 		y.decompose()
-	for y in x.find_all('a', class_='like-count'):
+	for y in x.find_all('span', class_='count'):
 		y.decompose()
+	for y in x.find_all('a'):
+		y.string = '----'
 
 for x in r.find_all('blockquote'):
 	x['style'] = "max-height: 400px; display: block;"
