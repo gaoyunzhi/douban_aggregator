@@ -54,10 +54,13 @@ for page in range(1, LIMIT):
 	r_center = r.find('div', {'id': 'wrapper'})
 	statuses = b.find('div', {'id': 'statuses'})
 	for item in statuses.find_all('div', class_='status-item'):
-		if not item.find('blockquote'):
+		if not item.find('blockquote') and item.find('div', class_='bd book'):
 			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
 			wr.append(item)
 			r_center.append(wr)
+
+for x in r.find_all('div', class_='actions'):
+	x.decompose()
 
 with open('result.html', 'w') as f:
 	f.write(str(r))
