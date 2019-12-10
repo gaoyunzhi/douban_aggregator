@@ -8,6 +8,10 @@ import hashlib
 import sys
 
 LIMIT = 10
+try:
+	LIMIT = int(sys.argv[2])
+except:
+	pass
 
 def fact():
 	return BeautifulSoup("<div></div>", features="lxml")
