@@ -79,18 +79,14 @@ for page in range(1, LIMIT):
 			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
 			wr.append(item)
 			r_center.append(wr)
-
-for x in r.find_all('div', class_='actions'):
-	for y in x.find_all('a', class_='btn'):
-		y.decompose()
-	for y in x.find_all('span', class_='count'):
-		y.decompose()
-	for y in x.find_all('a'):
-		y.string = '----'
-
-for x in r.find_all('blockquote'):
-	x['style'] = "max-height: 400px; display: block;"
-
-r = str(r)
-with open('result.html', 'w') as f:
-	f.write(r)
+	for x in r.find_all('div', class_='actions'):
+		for y in x.find_all('a', class_='btn'):
+			y.decompose()
+		for y in x.find_all('span', class_='count'):
+			y.decompose()
+		for y in x.find_all('a'):
+			y.string = '----'
+	for x in r.find_all('blockquote'):
+		x['style'] = "max-height: 400px; display: block;"
+	with open('result.html', 'w') as f:
+		f.write(str(r))
