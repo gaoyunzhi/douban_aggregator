@@ -3,6 +3,7 @@
 
 import requests
 from bs4 import BeautifulSoup
+from telegram_util import matchKey
 import yaml
 import hashlib
 import sys
@@ -48,7 +49,7 @@ def getUrl(url):
 def hasQuote(item):
 	if not item.find('blockquote'):
 		return False
-	if len(item.find('blockquote').text) < 20:
+	if len(item.find('blockquote').text) < 10:
 		return False
 	return True
 
@@ -58,7 +59,7 @@ def isBookOrMovie(item):
 def wantSee(item):
 	if (not hasQuote(item)) and isBookOrMovie(item):
 		return False
-	if '关注了成员:' in item.text:
+	if matchKey(item.text, ['收藏图书到豆列', '关注了成员:']):
 		return False
 	return True
 
