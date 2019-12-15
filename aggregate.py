@@ -48,7 +48,7 @@ def getUrl(url):
 def hasQuote(item):
 	if not item.find('blockquote'):
 		return False
-	if len(item.find('blockquote').text) < 10:
+	if len(item.find('blockquote').text) < 20:
 		return False
 	return True
 
