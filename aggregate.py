@@ -7,8 +7,9 @@ from telegram_util import matchKey
 import yaml
 import hashlib
 import sys
+import time
 
-LIMIT = 10
+LIMIT = 20
 try:
 	LIMIT = int(sys.argv[2])
 except:
@@ -49,7 +50,7 @@ def getUrl(url):
 def hasQuote(item):
 	if not item.find('blockquote'):
 		return False
-	if len(item.find('blockquote').text) < 10:
+	if len(item.find('blockquote').text) < 20:
 		return False
 	return True
 
@@ -64,6 +65,7 @@ def wantSee(item):
 	return True
 
 r = None
+sids = set()
 for page in range(1, LIMIT):
 	url = 'https://www.douban.com/?p=' + str(page)
 	b = BeautifulSoup(getUrl(url), 'html.parser')
@@ -76,6 +78,10 @@ for page in range(1, LIMIT):
 	r_center = r.find('div', {'id': 'wrapper'})
 	statuses = b.find('div', {'id': 'statuses'})
 	for item in statuses.find_all('div', class_='status-item'):
+		sid = item.attrs.get('data-sid')
+		if sid in sids:
+			continue
+		sids.add(sid)
 		if wantSee(item):
 			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
 			wr.append(item)
@@ -89,5 +95,7 @@ for page in range(1, LIMIT):
 			y.string = '----'
 	for x in r.find_all('blockquote'):
 		x['style'] = "max-height: 400px; display: block;"
+	if page % 5 == 0:
+		time.sleep(5)
 	with open('result.html', 'w') as f:
 		f.write(str(r))
