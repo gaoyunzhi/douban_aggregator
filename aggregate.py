@@ -60,7 +60,7 @@ def isBookOrMovie(item):
 def wantSee(item):
 	if (not hasQuote(item)) and isBookOrMovie(item):
 		return False
-	if matchKey(item.text, ['收藏图书到豆列', '关注了成员:']):
+	if matchKey(item.text, ['收藏图书到豆列', '关注了成员:', '恶臭扑鼻', '过分傻屌', '傻逼无限']):
 		return False
 	return True
 
