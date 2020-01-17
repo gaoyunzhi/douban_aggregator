@@ -9,6 +9,8 @@ import hashlib
 import sys
 import time
 
+BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', '过分傻屌', '傻逼无限']
+
 LIMIT = 20
 try:
 	LIMIT = int(sys.argv[2])
@@ -60,7 +62,7 @@ def isBookOrMovie(item):
 def wantSee(item):
 	if (not hasQuote(item)) and isBookOrMovie(item):
 		return False
-	if matchKey(item.text, ['收藏图书到豆列', '关注了成员:', '恶臭扑鼻', '过分傻屌', '傻逼无限']):
+	if matchKey(item.text, BLACKLIST):
 		return False
 	return True
 
