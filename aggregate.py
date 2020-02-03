@@ -66,7 +66,7 @@ def postTele(item, sid):
 		quote = quote.text
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
-		url = url.find('a')['herf']
+		url = url.find('a')['href']
 		if len(url) < 40:
 			url_text = url
 		else:
