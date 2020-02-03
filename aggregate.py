@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from telegram_util import matchKey
 import yaml
 import sys
-import time
 import cached_url
 from telegram.ext import Updater, MessageHandler, Filters
 from telegram import InputMediaPhoto
@@ -59,11 +58,11 @@ def wantSee(item):
 		return False
 	return True
 
-def isGoodImg(url):
+def isGoodImg(url, check_height = False):
 	try:
 		image = Image.open(urllib.request.urlopen(url))
 		width, height = image.size
-		return height <= 3000
+		return (not check_height) or height <= 3000
 	except:
 		return False
 
@@ -83,16 +82,23 @@ def postTele(item, sid):
 			url_text = url
 		else:
 			url_text = '网页链接'
-		douban_channel.send_message(
-			quote + ' [%s](%s)' % (url_text, url) , 
-			parse_mode='Markdown')
+		try:
+			douban_channel.send_message(
+				quote + ' [%s](%s)' % (url_text, url), 
+				parse_mode='Markdown',
+				timeout = 10*60)
+		except:
+			print(quote + ' [%s](%s)' % (url_text, url))
 		return
 	if item.find('div', class_='pics-wrapper'):
-		images = [x['href'] for x in item.find_all('a', class_='view-large') if x['href']]
+		images = [x['href'] for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
 		if len(images) > 0:
-			if len(images) > 1 or isGoodImg(images[0]):
+			if len(images) > 1 or isGoodImg(images[0], check_height = True):
 				group = [InputMediaPhoto(images[0], caption=quote)] + [InputMediaPhoto(url) for url in images[1:]]
-				tele.bot.send_media_group(douban_channel.id, group, timeout = 10*60)
+				try:
+					tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
+				except:
+					print(images)
 
 r = None
 sids = set()
