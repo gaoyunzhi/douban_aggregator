@@ -51,6 +51,7 @@ def wantPost(item):
 r = None
 sids = set()
 for page in range(1, page_limit):
+	url = 'https://www.douban.com/?p=' + str(page)
 	content = getUrl(url)
 	b = BeautifulSoup(content, 'html.parser')
 	if not r:
