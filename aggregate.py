@@ -11,7 +11,10 @@ import sys
 import time
 import cached_url
 from telegram.ext import Updater, MessageHandler, Filters
+from telegram import InputMediaPhoto
 from telegram_util import log_on_fail
+import urllib.request
+from PIL import Image
 
 try:
 	page_limit = int(sys.argv[2])
@@ -19,14 +22,14 @@ except:
 	page_limit = 20
 
 with open('credential') as f:
-    credential = yaml.load(f, Loader=yaml.FullLoader)
+	credential = yaml.load(f, Loader=yaml.FullLoader)
 
 tele = Updater(credential['bot_token'], use_context=True)
 debug_group = tele.bot.get_chat(-1001198682178)
 douban_channel = tele.bot.get_chat(-1001206770471)
 
 with open('existing') as f:
-    existing = yaml.load(f, Loader=yaml.FullLoader)
+	existing = yaml.load(f, Loader=yaml.FullLoader)
 
 def getUrl(url):
 	return cached_url.get(url, {'cookie': credential['cookie']})
@@ -56,6 +59,17 @@ def wantSee(item):
 		return False
 	return True
 
+def isGoodImg(url):
+	try:
+		image = Image.open(urllib.request.urlopen(url))
+		width, height = image.size
+		return True
+		print('imagecheck:' + str(height <= 3000))
+		# return height <= 3000
+	except:
+		print('fail img check')
+		return False
+
 @log_on_fail(debug_group)
 def postTele(item, sid):
 	if not wantSee(item):
@@ -77,10 +91,9 @@ def postTele(item, sid):
 	# 		parse_mode='Markdown')
 	# 	return
 	if item.find('div', class_='pics-wrapper'):
-		count = len(item.find_all('a', class_='view-large'))
-		if count == 1:
-			douban_channel.send_photo(item.find('a', class_='view-large')['href'], caption=quote)
-			return
+		images = [x['href'] for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
+		if len(images):
+			tele.bot.send_media_group(douban_channel.id, [InputMediaPhoto(url, caption=quote) for url in images])
 
 
 r = None
@@ -116,7 +129,7 @@ for page in range(1, page_limit):
 			y.string = '----'
 	for x in r.find_all('blockquote'):
 		x['style'] = "max-height: 400px; display: block;"
-	if page % 5 == 0:
-		time.sleep(5)
+	# if page % 5 == 0:
+	# 	time.sleep(5)
 	with open('result.html', 'w') as f:
 		f.write(str(r))
