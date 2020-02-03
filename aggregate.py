@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
+'过分傻屌', '傻逼无限']
+
 import requests
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
@@ -8,46 +11,18 @@ import yaml
 import hashlib
 import sys
 import time
+import cached_url
 
-BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', '过分傻屌', '傻逼无限']
-
-LIMIT = 20
 try:
-	LIMIT = int(sys.argv[2])
+	page_limit = int(sys.argv[2])
 except:
-	pass
+	page_limit = 20
 
-def fact():
-	return BeautifulSoup("<div></div>", features="lxml")
-
-with open('CREDENTIAL.yaml') as f:
-    CREDENTIAL = yaml.load(f, Loader=yaml.FullLoader)
-
-def getUrlContent(url):
-	headers = {
-		'method': 'GET',
-		'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-		'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36',
-		'cookie': CREDENTIAL['cookie'],
-	}
-	return requests.get(url, headers=headers).text
-
-def cachedContent(url):
-	cache = 'tmp_' + hashlib.sha224(url.encode('utf-8')).hexdigest()[:10] + '.html'
-	try:
-		with open(cache) as f:
-			return f.read()
-	except:
-		content = getUrlContent(url)
-		with open(cache, 'w') as f:
-			f.write(content)
-		return content
+with open('credential') as f:
+    credential = yaml.load(f, Loader=yaml.FullLoader)
 
 def getUrl(url):
-	if 'test' in str(sys.argv):
-		return cachedContent(url)
-	else:
-		return getUrlContent(url)
+	return cached_url.get(url, {'cookie': credential['cookie']})
 
 def hasQuote(item):
 	if not item.find('blockquote'):
@@ -68,7 +43,7 @@ def wantSee(item):
 
 r = None
 sids = set()
-for page in range(1, LIMIT):
+for page in range(1, page_limit):
 	url = 'https://www.douban.com/?p=' + str(page)
 	b = BeautifulSoup(getUrl(url), 'html.parser')
 	if not r:
