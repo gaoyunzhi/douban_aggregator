@@ -62,18 +62,25 @@ def postTele(item, sid):
 		return
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	quote = item.find('blockquote') or ''
+	author = item.find('a', class_='lnk-people').text.strip()
 	if quote:
-		quote = quote.text
-	if item.find('div', class_='url-block'):
-		url = item.find('div', class_='url-block')
-		url = url.find('a')['href']
-		if len(url) < 40:
-			url_text = url
-		else:
-			url_text = '网页链接'
-		douban_channel.send_message(
-			quote + ' [%s](%s)' + '\n[豆瓣链接](%s)' % (url_text, url, post_link) , 
-			parse_mode='Markdown')
+		quote = quote.text.strip() + ' -- ' + author
+	# if item.find('div', class_='url-block'):
+	# 	url = item.find('div', class_='url-block')
+	# 	url = url.find('a')['href']
+	# 	if len(url) < 80:
+	# 		url_text = url
+	# 	else:
+	# 		url_text = '网页链接'
+	# 	douban_channel.send_message(
+	# 		quote + ' [%s](%s)' % (url_text, url) , 
+	# 		parse_mode='Markdown')
+	# 	return
+	if item.find('div', class_='pics-wrapper'):
+		count = len(item.find_all('a', class_='view-large'))
+		if count == 1:
+			douban_channel.send_photo(item.find('a', class_='view-large')['href'], caption=quote)
+			return
 
 
 r = None
