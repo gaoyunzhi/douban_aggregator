@@ -10,6 +10,8 @@ import yaml
 import sys
 import time
 import cached_url
+from telegram.ext import Updater, MessageHandler, Filters
+from telegram_util import log_on_fail
 
 try:
 	page_limit = int(sys.argv[2])
@@ -18,6 +20,10 @@ except:
 
 with open('credential') as f:
     credential = yaml.load(f, Loader=yaml.FullLoader)
+
+tele = Updater(credential['bot_token'], use_context=True)
+debug_group = tele.bot.get_chat(-1001198682178)
+douban_channel = tele.bot.get_chat(-1001206770471)
 
 with open('existing') as f:
     existing = yaml.load(f, Loader=yaml.FullLoader)
@@ -35,18 +41,40 @@ def hasQuote(item):
 def isBookOrMovie(item):
 	return item.find('div', class_='bd book') or item.find('div', class_='bd movie')
 
+def dataCount(item):
+	for x in item.find_all('span', class_='count'):
+		r = int(x.get('data-count'))
+		if r:
+			yield r
+
 def wantSee(item):
 	if (not hasQuote(item)) and isBookOrMovie(item):
 		return False
 	if matchKey(item.text, BLACKLIST):
 		return False
+	if sum(dataCount(item)) < 80: 
+		return False
 	return True
 
-def wantPost(item):
+@log_on_fail(debug_group)
+def postTele(item, sid):
 	if not wantSee(item):
-		return False
-	print(item)
-	sys.exit(0)
+		return
+	post_link = item.find('span', class_='created_at').find('a')['href']
+	quote = item.find('blockquote') or ''
+	if quote:
+		quote = quote.text
+	if item.find('div', class_='url-block'):
+		url = item.find('div', class_='url-block')
+		url = url.find('a')['herf']
+		if len(url) < 40:
+			url_text = url
+		else:
+			url_text = '网页链接'
+		douban_channel.send_message(
+			quote + ' [%s](%s)' + '\n[豆瓣链接](%s)' % (url_text, url, post_link) , 
+			parse_mode='Markdown')
+
 
 r = None
 sids = set()
@@ -71,8 +99,7 @@ for page in range(1, page_limit):
 			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
 			wr.append(item)
 			r_center.append(wr)
-		if wantPost(item): # TODO: dedup
-			pass # post to telegram
+		postTele(item, sid) # TODO: dedup
 	for x in r.find_all('div', class_='actions'):
 		for y in x.find_all('a', class_='btn'):
 			y.decompose()
