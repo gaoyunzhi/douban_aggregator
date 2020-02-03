@@ -4,11 +4,9 @@
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
 '过分傻屌', '傻逼无限']
 
-import requests
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
 import yaml
-import hashlib
 import sys
 import time
 import cached_url
@@ -20,6 +18,9 @@ except:
 
 with open('credential') as f:
     credential = yaml.load(f, Loader=yaml.FullLoader)
+
+with open('existing') as f:
+    existing = yaml.load(f, Loader=yaml.FullLoader)
 
 def getUrl(url):
 	return cached_url.get(url, {'cookie': credential['cookie']})
@@ -41,13 +42,19 @@ def wantSee(item):
 		return False
 	return True
 
+def wantPost(item):
+	if not wantSee(item):
+		return False
+	print(item)
+	sys.exit(0)
+
 r = None
 sids = set()
 for page in range(1, page_limit):
-	url = 'https://www.douban.com/?p=' + str(page)
-	b = BeautifulSoup(getUrl(url), 'html.parser')
+	content = getUrl(url)
+	b = BeautifulSoup(content, 'html.parser')
 	if not r:
-		r = BeautifulSoup(getUrl(url), 'html.parser')
+		r = BeautifulSoup(content, 'html.parser')
 		r_center = BeautifulSoup('<div id="wrapper" style="max-width:680px"></div>', features="lxml")
 		r.find('div', {'id': 'wrapper'}).replace_with(r_center)
 		r.find('div', class_='global-nav').decompose()
@@ -63,6 +70,8 @@ for page in range(1, page_limit):
 			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
 			wr.append(item)
 			r_center.append(wr)
+		if wantPost(item): # TODO: dedup
+			pass # post to telegram
 	for x in r.find_all('div', class_='actions'):
 		for y in x.find_all('a', class_='btn'):
 			y.decompose()
