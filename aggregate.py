@@ -63,11 +63,8 @@ def isGoodImg(url):
 	try:
 		image = Image.open(urllib.request.urlopen(url))
 		width, height = image.size
-		return True
-		print('imagecheck:' + str(height <= 3000))
-		# return height <= 3000
+		return height <= 3000
 	except:
-		print('fail img check')
 		return False
 
 @log_on_fail(debug_group)
@@ -79,22 +76,23 @@ def postTele(item, sid):
 	author = item.find('a', class_='lnk-people').text.strip()
 	if quote:
 		quote = quote.text.strip() + ' -- ' + author
-	# if item.find('div', class_='url-block'):
-	# 	url = item.find('div', class_='url-block')
-	# 	url = url.find('a')['href']
-	# 	if len(url) < 80:
-	# 		url_text = url
-	# 	else:
-	# 		url_text = '网页链接'
-	# 	douban_channel.send_message(
-	# 		quote + ' [%s](%s)' % (url_text, url) , 
-	# 		parse_mode='Markdown')
-	# 	return
+	if item.find('div', class_='url-block'):
+		url = item.find('div', class_='url-block')
+		url = url.find('a')['href']
+		if len(url) < 80:
+			url_text = url
+		else:
+			url_text = '网页链接'
+		douban_channel.send_message(
+			quote + ' [%s](%s)' % (url_text, url) , 
+			parse_mode='Markdown')
+		return
 	if item.find('div', class_='pics-wrapper'):
-		images = [x['href'] for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
-		if len(images):
-			tele.bot.send_media_group(douban_channel.id, [InputMediaPhoto(url, caption=quote) for url in images])
-
+		images = [x['href'] for x in item.find_all('a', class_='view-large') if x['href']]
+		if len(images) > 0:
+			if len(images) > 1 or isGoodImg(images[0]):
+				group = [InputMediaPhoto(images[0], caption=quote)] + [InputMediaPhoto(url) for url in images[1:]]
+				tele.bot.send_media_group(douban_channel.id, group, timeout = 10*60)
 
 r = None
 sids = set()
@@ -129,7 +127,5 @@ for page in range(1, page_limit):
 			y.string = '----'
 	for x in r.find_all('blockquote'):
 		x['style'] = "max-height: 400px; display: block;"
-	# if page % 5 == 0:
-	# 	time.sleep(5)
 	with open('result.html', 'w') as f:
 		f.write(str(r))
