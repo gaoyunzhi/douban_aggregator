@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
-'过分傻屌', '傻逼无限']
+'过分傻屌', '傻逼无限', '淘宝店']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
@@ -16,7 +16,7 @@ import urllib.request
 from PIL import Image
 
 try:
-	page_limit = int(sys.argv[2])
+	page_limit = int(sys.argv[1])
 except:
 	page_limit = 20
 
@@ -87,22 +87,25 @@ def postTele(item, sid):
 				quote + ' [%s](%s)' % (url_text, url), 
 				parse_mode='Markdown',
 				timeout = 10*60)
-		except:
+		except Exception as e:
+			print(e)
 			print(quote + ' [%s](%s)' % (url_text, url))
 		return
 	if item.find('div', class_='pics-wrapper'):
-		images = [x['href'] for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
+		images = [x['href'].strip() for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
 		if len(images) > 0:
 			if len(images) > 1 or isGoodImg(images[0], check_height = True):
 				group = [InputMediaPhoto(images[0], caption=quote)] + [InputMediaPhoto(url) for url in images[1:]]
 				try:
 					tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
-				except:
+				except Exception as e:
+					print(e)
 					print(images)
 
 r = None
 sids = set()
 for page in range(1, page_limit):
+	print(page)
 	url = 'https://www.douban.com/?p=' + str(page)
 	content = getUrl(url)
 	b = BeautifulSoup(content, 'html.parser')
