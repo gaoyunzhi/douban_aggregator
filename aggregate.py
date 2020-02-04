@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
-'过分傻屌', '傻逼无限', '淘宝店']
+'过分傻屌', '傻逼无限', '淘宝店', '林爸爸']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
