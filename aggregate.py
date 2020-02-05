@@ -14,6 +14,7 @@ from telegram import InputMediaPhoto
 from telegram_util import log_on_fail
 import urllib.request
 from PIL import Image
+import export_to_telegraph
 
 try:
 	page_limit = int(sys.argv[1])
@@ -22,6 +23,7 @@ except:
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
+export_to_telegraph.token = credential['telegraph_token']
 
 tele = Updater(credential['bot_token'], use_context=True)
 debug_group = tele.bot.get_chat(-1001198682178)
