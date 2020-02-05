@@ -80,6 +80,7 @@ def postTele(item, sid):
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
+		url = export_to_telegraph.export(url) or url
 		if len(url) < 80:
 			url_text = url
 		else:
