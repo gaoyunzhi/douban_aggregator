@@ -51,12 +51,12 @@ def dataCount(item):
 		if r:
 			yield r
 
-def wantSee(item):
+def wantSee(item, page):
 	if (not hasQuote(item)) and isBookOrMovie(item):
 		return False
 	if matchKey(item.text, BLACKLIST):
 		return False
-	if sum(dataCount(item)) < 80: 
+	if sum(dataCount(item)) < 120 + page * 5: 
 		return False
 	return True
 
@@ -70,8 +70,6 @@ def isGoodImg(url, check_height = False):
 
 @log_on_fail(debug_group)
 def postTele(item, sid):
-	if not wantSee(item):
-		return
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	quote = item.find('blockquote') or ''
 	author = item.find('a', class_='lnk-people').text.strip()
@@ -126,10 +124,11 @@ for page in range(1, page_limit):
 		if sid in sids:
 			continue
 		sids.add(sid)
-		if wantSee(item):
-			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
-			wr.append(item)
-			r_center.append(wr)
+		if not wantSee(item, page):
+			continue
+		wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
+		wr.append(item)
+		r_center.append(wr)
 		postTele(item, sid) # TODO: dedup
 	for x in r.find_all('div', class_='actions'):
 		for y in x.find_all('a', class_='btn'):
