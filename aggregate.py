@@ -15,6 +15,7 @@ from telegram_util import log_on_fail
 import urllib.request
 from PIL import Image
 import export_to_telegraph
+import time
 
 try:
 	page_limit = int(sys.argv[1])
@@ -141,3 +142,5 @@ for page in range(1, page_limit):
 		x['style'] = "max-height: 400px; display: block;"
 	with open('result.html', 'w') as f:
 		f.write(str(r))
+	if page_limit % 5 == 0:
+		time.sleep(page_limit % 31)
