@@ -17,10 +17,17 @@ from PIL import Image
 import export_to_telegraph
 import time
 
+page_start = 1
+page_end = 50
 try:
-	page_limit = int(sys.argv[1])
+	page_end = int(sys.argv[1])
+	try:
+		page_end = int(sys.argv[2])
+		page_start = int(sys.argv[1])
+	except:
+		pass
 except:
-	page_limit = 20
+	pass
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -107,7 +114,7 @@ def postTele(item, sid):
 
 r = None
 sids = set()
-for page in range(1, page_limit):
+for page in range(page_start, page_end):
 	print(page)
 	url = 'https://www.douban.com/?p=' + str(page)
 	content = getUrl(url)
@@ -142,5 +149,5 @@ for page in range(1, page_limit):
 		x['style'] = "max-height: 400px; display: block;"
 	with open('result.html', 'w') as f:
 		f.write(str(r))
-	if page_limit % 5 == 0:
-		time.sleep(page_limit % 31)
+	if page % 5 == 0:
+		time.sleep(page % 31)
