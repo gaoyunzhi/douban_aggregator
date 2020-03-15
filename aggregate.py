@@ -9,13 +9,14 @@ from telegram_util import matchKey
 import sys
 import os
 import cached_url
-from telegram.ext import Updater, MessageHandler, Filters
+from telegram.ext import Updater
 from telegram import InputMediaPhoto
 from telegram_util import log_on_fail
 import urllib.request
 from PIL import Image
 import export_to_telegraph
 import time
+import yaml
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -36,6 +37,7 @@ def addToExisting(x):
 	existing.add(x)
 	with open('existing', 'w') as f:
 		f.write('\n'.join(existing))
+	return True
 
 def getSoup(url):
 	return BeautifulSoup(cached_url.get(url, {'cookie': credential['cookie']}), 
@@ -85,7 +87,20 @@ def postTele(item):
 	if quote:
 		quote = quote.text.strip()
 
+	soup = getSoup(post_link).find('div', class_='status-item')
+	images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')]
+	images = [x for x in images if isGoodImg(x)]
+	if images:
+		if len(images) > 1 or isGoodImg(images[0], check_height = True):
+			cap = quote + ' [%s](%s)' % (author, post_link)
+			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
+				[InputMediaPhoto(url) for url in images[1:]]
+			return tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
+
+	return 
+
 	if item.find('div', class_='url-block'):
+		print('here')
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
 		url = export_to_telegraph.export(url) or url
@@ -97,27 +112,19 @@ def postTele(item):
 			quote + ' [%s](%s) [%s](%s)' % (url_text, url, author, post_link), 
 			parse_mode='Markdown',
 			timeout = 10*60)
-	# if item.find('div', class_='pics-wrapper'):
-	# 	images = [x['href'].strip() for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
-	# 	if len(images) > 0:
-	# 		if len(images) > 1 or isGoodImg(images[0], check_height = True):
-	# 			cap = quote + ' [%s](%s)' % (author, post_link)
-	# 			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + [InputMediaPhoto(url) for url in images[1:]]
-	# 			try:
-	# 				return tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
-	# 			except Exception as e:
-	# 				print(e)
-	# 				print(images)
 
 def start():
-	for page in range(50):
+	if 'test' in str(sys.argv):
+		os.system('rm existing') # to remove
+	for page in range(1, 5):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
 				continue
 			if postTele(item):
 				return # testing
-		# if page % 5 == 0:
+		if page % 5 == 0:
+			print(page)
 		# 	time.sleep(page % 31)
 
 if __name__ == '__main__':
