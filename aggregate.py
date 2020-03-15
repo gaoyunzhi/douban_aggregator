@@ -122,9 +122,9 @@ def sendMessage(page, quote, suffix, post_link, item):
 def formatImages(images, post_link):
 	os.system('mkdir tmp_image > /dev/null 2>&1')
 	result = []
-	prefix = post_link.strip().split('/')[-1]
+	prefix = 'tmp_image/' + post_link.strip().split('/')[-1] + '_'
 	for index, image in enumerate(images):
-		fn = 'tmp_image/' + prefix + str(index) + os.path.splitext(image)[1]
+		fn = prefix + str(index) + os.path.splitext(image)[1]
 		with open(fn, 'wb') as f:
 			f.write(cached_url.get(image, force_cache=True, mode='b'))
 		cuts = list(pic_cut.cut(fn))
