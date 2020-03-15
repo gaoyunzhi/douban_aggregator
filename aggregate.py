@@ -79,6 +79,8 @@ def getQuote(raw_quote):
 			index = url.find('?')
 			if index > -1:
 				url = url[:index]
+		if url.endswith('/'):
+			url = url[:-1]
 		if '_' in url:
 			url = '[网页链接](%s)' % url
 		quote = quote.replace(link['href'], ' ' + url + ' ')
@@ -166,7 +168,7 @@ def postTele(page, item):
 		# 	timeout = 10*60)
 
 def start():
-	for page in range(1, 50):
+	for page in range(1, 100):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
