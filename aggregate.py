@@ -29,7 +29,11 @@ os.system('touch existing')
 with open('existing') as f:
 	existing = set(x.strip() for x in f.readlines())
 
-def saveExisting():
+def addToExisting(x):
+	x = x.strip()
+	if x in existing:
+		return False
+	existing.add(x)
 	with open('existing', 'w') as f:
 		f.write('\n'.join(existing))
 
@@ -72,6 +76,8 @@ def isGoodImg(url, check_height = False):
 @log_on_fail(debug_group)
 def postTele(item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
+	if not addToExisting(post_link):
+		return
 	quote = item.find('blockquote') or ''
 	author = item.find('a', class_='lnk-people').text.strip()
 	if quote:
@@ -113,6 +119,7 @@ def start():
 			if not wantSee(item, page):
 				continue
 			postTele(item)
+			return # testing
 		# if page % 5 == 0:
 		# 	time.sleep(page % 31)
 
