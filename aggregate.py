@@ -76,15 +76,18 @@ def getQuote(raw_quote):
 	quote = raw_quote.text.strip()
 	for link in raw_quote.find_all('a', title=True, href=True):
 		url = export_to_telegraph.export(link['title']) or link['title']
-		quote = quote.replace(link['href'], link['title'])
+		quote = quote.replace(link['href'], ' ' + link['title'] + ' ')
 	return quote
 
 def cut(quote, suffix, limit):
 	if len(quote) + len(suffix) > limit:
-		return quote[:limit - len(suffix)] + '...' + suffix
-	return quote + suffix
+		result = quote[:limit - len(suffix)] + '...' + suffix
+	result = quote + suffix
+	result = result.replace('https://', '')
+	result = result.replace('http://', '')
+	return result
 
-@log_on_fail(debug_group)
+# @log_on_fail(debug_group)
 def postTele(page, item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	if post_link.strip() in existing:
@@ -111,14 +114,9 @@ def postTele(page, item):
 			cap = cut(quote, suffix, 1000)
 			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
 				[InputMediaPhoto(url) for url in images[1:]]
-			try:
-				tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
-				addToExisting(post_link)
-			except Exception as e:
-				print(page, post_link)
-				print(raw_images)
-				print(str(e))
-				tb.print_exc()
+			print(page, post_link, cap)
+			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
+			addToExisting(post_link)
 			return
 
 	if '/note/' in post_link:
@@ -150,7 +148,7 @@ def postTele(page, item):
 		# 	timeout = 10*60)
 
 def start():
-	for page in range(1, 5):
+	for page in range(10, 30):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
