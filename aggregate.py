@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
-'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发']
+'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
@@ -70,6 +70,19 @@ def wantSee(item, page):
 		return True
 	return sum(dataCount(item)) > 120 + page * 5
 
+def getQuote(raw_quote):
+	if not raw_quote:
+		return ''
+	quote = raw_quote.text.strip()
+	for link in raw_quote.find_all('a', title=True, href=True):
+		url = export_to_telegraph.export(link['title']) or link['title']
+		quote = quote.replace(link['href'], link['title'])
+	return quote
+
+def cut(quote, suffix, limit):
+	if len(quote) + len(suffix) > limit:
+		quote = quote[:limit - len(suffix)] + '...'
+
 @log_on_fail(debug_group)
 def postTele(item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
@@ -78,8 +91,7 @@ def postTele(item):
 
 	author = item.find('a', class_='lnk-people').text.strip()	
 	raw_quote = item.find('blockquote') or ''
-	if raw_quote:
-		quote = raw_quote.text.strip()
+	quote = getQuote(raw_quote)
 
 	new_status = item
 	while 'new-status' not in new_status.get('class'):
@@ -90,14 +102,12 @@ def postTele(item):
 		pass
 
 	soup = getSoup(post_link).find('div', class_='status-item')
+	suffix =  ' [%s](%s)' % (author, post_link)
 	
 	images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')][:9]
 	raw_images = images[:]
 	if images:
-		suffix =  ' [%s](%s)' % (author, post_link)
-		if len(quote) + len(suffix) > 1000:
-			quote = quote[:1000 - len(suffix)] + '...'
-		cap = quote + ' [%s](%s)' % (author, post_link)
+		cap = cut(quote, suffix, 1000)
 		group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
 			[InputMediaPhoto(url) for url in images[1:]]
 		try:
@@ -107,26 +117,28 @@ def postTele(item):
 			print(post_link)
 			print(raw_images)
 			print(str(e))
-			tb.print_exec()
+			tb.print_exc()
 		return
 
 	if quote and raw_quote.find('a', title=True, href=True):
-		print(post_link)
-	return 
+		douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
+		addToExisting(post_link)
+		return
 
 	if item.find('div', class_='url-block'):
-		print('here')
-		url = item.find('div', class_='url-block')
-		url = url.find('a')['href']
-		url = export_to_telegraph.export(url) or url
-		if len(url) < 80:
-			url_text = url
-		else:
-			url_text = '网页链接'
-		return douban_channel.send_message(
-			quote + ' [%s](%s) [%s](%s)' % (url_text, url, author, post_link), 
-			parse_mode='Markdown',
-			timeout = 10*60)
+		print(post_link)
+		# print('here')
+		# url = item.find('div', class_='url-block')
+		# url = url.find('a')['href']
+		# url = export_to_telegraph.export(url) or url
+		# if len(url) < 80:
+		# 	url_text = url
+		# else:
+		# 	url_text = '网页链接'
+		# return douban_channel.send_message(
+		# 	quote + ' [%s](%s) [%s](%s)' % (url_text, url, author, post_link), 
+		# 	parse_mode='Markdown',
+		# 	timeout = 10*60)
 
 def start():
 	for page in range(1, 20):
