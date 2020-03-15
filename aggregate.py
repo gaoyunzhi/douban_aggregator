@@ -40,8 +40,9 @@ def addToExisting(x):
 	return True
 
 def getSoup(url):
-	return BeautifulSoup(cached_url.get(url, {'cookie': credential['cookie']}), 
-		'html.parser')
+	return BeautifulSoup(cached_url.get(url, {
+		'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)',
+		'cookie': credential['cookie']}), 'html.parser')
 
 def hasQuote(item):
 	if not item.find('blockquote'):
@@ -88,10 +89,15 @@ def postTele(item):
 		quote = quote.text.strip()
 
 	soup = getSoup(post_link).find('div', class_='status-item')
+	print(1)
 	images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')]
 	images = [x for x in images if isGoodImg(x)]
 	if images:
+		print(2)
 		if len(images) > 1 or isGoodImg(images[0], check_height = True):
+			suffix =  ' [%s](%s)' % (author, post_link)
+			if len(quote) + len(suffix) > 1000:
+				quote = quote[:1000 - len(suffix)] + '...'
 			cap = quote + ' [%s](%s)' % (author, post_link)
 			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
 				[InputMediaPhoto(url) for url in images[1:]]
@@ -126,6 +132,8 @@ def start():
 		if page % 5 == 0:
 			print(page)
 		# 	time.sleep(page % 31)
+	if 'test' in str(sys.argv):
+		os.system('rm existing') # to remove
 
 if __name__ == '__main__':
 	start()
