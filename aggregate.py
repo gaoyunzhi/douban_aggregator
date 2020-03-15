@@ -17,6 +17,7 @@ import time
 import yaml
 import traceback as tb
 import pic_cut
+import requests
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -122,30 +123,22 @@ def sendMessage(page, quote, suffix, post_link, item):
 def getSend(image):
 	os.system('mkdir tmp_image > /dev/null 2>&1')
 	time.sleep(1)
-	try:
-		with open('tmp_image/1', 'wb') as f:
-			f.write(requests.get(image, stream=True))
-		cuts = [open(x, 'rb') for x in pic_cut.cut('1')]
-		if not cuts:
-			cuts = [image]
-		for cut in cuts:
-			try:
-				r = debug_group.send_photo(cut, timeout = 2*60)
-				yield cut
-				r.delete()
-			except Exception as e:
-				print(image, str(e))
-			try:
-				r.delete()
-			except Exception as e:
-				pass
-	except Exception as e:
-		print(image, str(e))
-		pass
-
-	os.system('rm -r tmp_image > /dev/null 2>&1')
-	return result
-
+	print(image)
+	fn = 'tmp_image/1' + os.path.splitext(image)[1]
+	with open(fn, 'wb') as f:
+		f.write(requests.get(image, stream=True).content)
+	cuts = [open(x, 'rb') for x in pic_cut.cut(fn)]
+	if not cuts:
+		cuts = [open(fn, 'rb')]
+	for cut in cuts:
+		r = debug_group.send_photo(cut, timeout = 2*60)
+		yield cut
+		r.delete()
+		try:
+			r.delete()
+		except Exception as e:
+			pass
+	# os.system('rm -r tmp_image > /dev/null 2>&1')
 
 # @log_on_fail(debug_group)
 def postTele(page, item):
@@ -161,7 +154,7 @@ def postTele(page, item):
 	if '/status/' in post_link:
 		soup = getSoup(post_link).find('div', class_='status-item')	
 		images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')]
-		images = [y for y in getSend(x) for x in images]
+		images = [y for x in images for y in getSend(x)]
 		images = images[:9]
 		raw_images = images[:]
 		if images:
