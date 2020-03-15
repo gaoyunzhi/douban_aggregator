@@ -104,9 +104,8 @@ def postTele(item):
 def start():
 	for page in range(50):
 		url = 'https://www.douban.com/?p=' + str(page)
-		b = BeautifulSoup(getUrl(url), 'html.parser')
-		statuses = b.find('div', {'id': 'statuses'})
-		for item in statuses.find_all('div', class_='status-item'):
+		soup = BeautifulSoup(getUrl(url), 'html.parser')
+		for item in soup.find_all('div', class_='status-item'):
 			if not wantSee(item, page):
 				continue
 			postTele(item)
