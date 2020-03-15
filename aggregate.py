@@ -18,6 +18,9 @@ import traceback as tb
 import pic_cut
 import requests
 
+last_request = 0
+num_requests = 0
+
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
 export_to_telegraph.token = credential['telegraph_token']
@@ -40,7 +43,12 @@ def addToExisting(x):
 	return True
 
 def getSoup(url, force_cache=False):
-	# time.sleep(5)
+	if num_requests < 2:
+		num_requests += 1
+	else:
+		if time.time() - last_request < 5:
+			time.sleep(5 + last_request - time.time())
+			last_request = time.time()
 	return BeautifulSoup(cached_url.get(url, {
 		'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)',
 		'cookie': credential['cookie']}, force_cache=force_cache), 'html.parser')
