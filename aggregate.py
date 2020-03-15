@@ -43,6 +43,7 @@ def addToExisting(x):
 	return True
 
 def getSoup(url, force_cache=False):
+	global num_requests, last_request
 	if num_requests < 2:
 		num_requests += 1
 	else:
