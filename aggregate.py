@@ -77,7 +77,10 @@ def wantSee(item, page):
 		return False
 	if 'people/gyz' in str(item.parent):
 		return True
-	return sum(dataCount(item)) > 120 + page
+	require = 120 + page
+	if 'people/renjiananhuo' in str(item.parent):
+		require *= 4 # 这人太火，发什么都有人点赞。。。
+	return sum(dataCount(item)) > require
 
 def clearUrl(url):
 	if 'weibo' in url:
