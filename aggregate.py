@@ -81,10 +81,11 @@ def getQuote(raw_quote):
 
 def cut(quote, suffix, limit):
 	if len(quote) + len(suffix) > limit:
-		quote = quote[:limit - len(suffix)] + '...'
+		return quote[:limit - len(suffix)] + '...' + suffix
+	return quote + suffix
 
 @log_on_fail(debug_group)
-def postTele(item):
+def postTele(page, item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	if post_link.strip() in existing:
 		return
@@ -101,23 +102,31 @@ def postTele(item):
 		# print('reshared_by', reshared_by.find('a')['href'])
 		pass
 
-	soup = getSoup(post_link).find('div', class_='status-item')
 	suffix =  ' [%s](%s)' % (author, post_link)
-	
-	images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')][:9]
-	raw_images = images[:]
-	if images:
-		cap = cut(quote, suffix, 1000)
-		group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
-			[InputMediaPhoto(url) for url in images[1:]]
-		try:
-			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
-			addToExisting(post_link)
-		except Exception as e:
-			print(post_link)
-			print(raw_images)
-			print(str(e))
-			tb.print_exc()
+	if '/status/' in post_link:
+		soup = getSoup(post_link).find('div', class_='status-item')	
+		images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')][:9]
+		raw_images = images[:]
+		if images:
+			cap = cut(quote, suffix, 1000)
+			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
+				[InputMediaPhoto(url) for url in images[1:]]
+			try:
+				tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
+				addToExisting(post_link)
+			except Exception as e:
+				print(page, post_link)
+				print(raw_images)
+				print(str(e))
+				tb.print_exc()
+			return
+
+	if '/note/' in post_link:
+		url = export_to_telegraph.export(post_link) or post_link
+		quote = url + ' ' + quote
+		# TODO: refactor
+		douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
+		addToExisting(post_link)
 		return
 
 	if quote and raw_quote.find('a', title=True, href=True):
@@ -141,15 +150,15 @@ def postTele(item):
 		# 	timeout = 10*60)
 
 def start():
-	for page in range(1, 20):
+	for page in range(1, 5):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
 				continue
-			postTele(item)
+			postTele(page, item)
 		if page % 5 == 0:
 			print(page)
-		# 	time.sleep(page % 31)
+			time.sleep(page % 31)
 
 if __name__ == '__main__':
 	start()
