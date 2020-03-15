@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
-'过分傻屌', '傻逼无限', '淘宝店', '林爸爸']
+'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
@@ -17,6 +17,7 @@ from PIL import Image
 import export_to_telegraph
 import time
 import yaml
+import traceback as tb
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -35,8 +36,8 @@ def addToExisting(x):
 	if x in existing:
 		return False
 	existing.add(x)
-	with open('existing', 'w') as f:
-		f.write('\n'.join(existing))
+	with open('existing', 'a') as f:
+		f.write('\n' + x)
 	return True
 
 def getSoup(url):
@@ -69,40 +70,48 @@ def wantSee(item, page):
 		return True
 	return sum(dataCount(item)) > 120 + page * 5
 
-def isGoodImg(url, check_height = False):
-	try:
-		image = Image.open(urllib.request.urlopen(url))
-		width, height = image.size
-		return (not check_height) or height <= 3000
-	except:
-		return False
-
 @log_on_fail(debug_group)
 def postTele(item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
-	if not addToExisting(post_link):
+	if post_link.strip() in existing:
 		return
 
 	author = item.find('a', class_='lnk-people').text.strip()	
-	quote = item.find('blockquote') or ''
-	if quote:
-		quote = quote.text.strip()
+	raw_quote = item.find('blockquote') or ''
+	if raw_quote:
+		quote = raw_quote.text.strip()
+
+	new_status = item
+	while 'new-status' not in new_status.get('class'):
+		new_status = new_status.parent
+	reshared_by = new_status.find('span', class_='reshared_by')
+	if reshared_by:
+		# print('reshared_by', reshared_by.find('a')['href'])
+		pass
 
 	soup = getSoup(post_link).find('div', class_='status-item')
-	print(1)
-	images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')]
-	images = [x for x in images if isGoodImg(x)]
+	
+	images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')][:9]
+	raw_images = images[:]
 	if images:
-		print(2)
-		if len(images) > 1 or isGoodImg(images[0], check_height = True):
-			suffix =  ' [%s](%s)' % (author, post_link)
-			if len(quote) + len(suffix) > 1000:
-				quote = quote[:1000 - len(suffix)] + '...'
-			cap = quote + ' [%s](%s)' % (author, post_link)
-			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
-				[InputMediaPhoto(url) for url in images[1:]]
-			return tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
+		suffix =  ' [%s](%s)' % (author, post_link)
+		if len(quote) + len(suffix) > 1000:
+			quote = quote[:1000 - len(suffix)] + '...'
+		cap = quote + ' [%s](%s)' % (author, post_link)
+		group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
+			[InputMediaPhoto(url) for url in images[1:]]
+		try:
+			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
+			addToExisting(post_link)
+		except Exception as e:
+			print(post_link)
+			print(raw_images)
+			print(str(e))
+			tb.print_exec()
+		return
 
+	if quote and raw_quote.find('a', title=True, href=True):
+		print(post_link)
 	return 
 
 	if item.find('div', class_='url-block'):
@@ -120,20 +129,15 @@ def postTele(item):
 			timeout = 10*60)
 
 def start():
-	if 'test' in str(sys.argv):
-		os.system('rm existing') # to remove
-	for page in range(1, 5):
+	for page in range(1, 20):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
 				continue
-			if postTele(item):
-				return # testing
+			postTele(item)
 		if page % 5 == 0:
 			print(page)
 		# 	time.sleep(page % 31)
-	if 'test' in str(sys.argv):
-		os.system('rm existing') # to remove
 
 if __name__ == '__main__':
 	start()
