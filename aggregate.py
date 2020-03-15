@@ -6,8 +6,8 @@ BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '�
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
-import yaml
 import sys
+import os
 import cached_url
 from telegram.ext import Updater, MessageHandler, Filters
 from telegram import InputMediaPhoto
@@ -25,8 +25,9 @@ tele = Updater(credential['bot_token'], use_context=True)
 debug_group = tele.bot.get_chat(-1001198682178)
 douban_channel = tele.bot.get_chat(-1001206770471)
 
+os.system('touch existing')
 with open('existing') as f:
-	existing = yaml.load(f, Loader=yaml.FullLoader)
+	existing = [x.strip() for x in f.readlines()]
 
 def getUrl(url):
 	return cached_url.get(url, {'cookie': credential['cookie']})
@@ -65,7 +66,7 @@ def isGoodImg(url, check_height = False):
 		return False
 
 @log_on_fail(debug_group)
-def postTele(item, sid):
+def postTele(item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	quote = item.find('blockquote') or ''
 	author = item.find('a', class_='lnk-people').text.strip()
@@ -101,45 +102,16 @@ def postTele(item, sid):
 					print(images)
 
 def start():
-	r = None
-	sids = set()
-	for page in range(page_start, page_end):
-		print(page)
+	for page in range(50):
 		url = 'https://www.douban.com/?p=' + str(page)
-		content = getUrl(url)
-		b = BeautifulSoup(content, 'html.parser')
-		if not r:
-			r = BeautifulSoup(content, 'html.parser')
-			r_center = BeautifulSoup('<div id="wrapper" style="max-width:680px"></div>', features="lxml")
-			r.find('div', {'id': 'wrapper'}).replace_with(r_center)
-			r.find('div', class_='global-nav').decompose()
-			r.find('div', class_='nav').decompose()
-		r_center = r.find('div', {'id': 'wrapper'})
+		b = BeautifulSoup(getUrl(url), 'html.parser')
 		statuses = b.find('div', {'id': 'statuses'})
 		for item in statuses.find_all('div', class_='status-item'):
-			sid = item.attrs.get('data-sid')
-			if sid in sids:
-				continue
-			sids.add(sid)
 			if not wantSee(item, page):
 				continue
-			wr = BeautifulSoup('<div style="padding-bottom:30px"></div>', features="lxml")
-			wr.append(item)
-			r_center.append(wr)
-			postTele(item, sid) # TODO: dedup
-		for x in r.find_all('div', class_='actions'):
-			for y in x.find_all('a', class_='btn'):
-				y.decompose()
-			for y in x.find_all('span', class_='count'):
-				y.decompose()
-			for y in x.find_all('a'):
-				y.string = '----'
-		for x in r.find_all('blockquote'):
-			x['style'] = "max-height: 400px; display: block;"
-		with open('result.html', 'w') as f:
-			f.write(str(r))
-		if page % 5 == 0:
-			time.sleep(page % 31)
+			postTele(item)
+		# if page % 5 == 0:
+		# 	time.sleep(page % 31)
 
 if __name__ == '__main__':
 	start()
