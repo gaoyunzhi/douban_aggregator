@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
-'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘']
+'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
@@ -12,8 +12,6 @@ import cached_url
 from telegram.ext import Updater
 from telegram import InputMediaPhoto
 from telegram_util import log_on_fail
-import urllib.request
-from PIL import Image
 import export_to_telegraph
 import time
 import yaml
@@ -75,17 +73,38 @@ def getQuote(raw_quote):
 		return ''
 	quote = raw_quote.text.strip()
 	for link in raw_quote.find_all('a', title=True, href=True):
-		url = export_to_telegraph.export(link['title']) or link['title']
-		quote = quote.replace(link['href'], ' ' + link['title'] + ' ')
+		url = link['title']
+		url = export_to_telegraph.export(url) or url
+		if 'weibo' in url:
+			index = url.find('?')
+			if index > -1:
+				url = url[:index]
+		if '_' in url:
+			url = '[网页链接](%s)' % url
+		quote = quote.replace(link['href'], ' ' + url + ' ')
 	return quote
 
 def cut(quote, suffix, limit):
 	if len(quote) + len(suffix) > limit:
 		result = quote[:limit - len(suffix)] + '...' + suffix
-	result = quote + suffix
+	else:
+		result = quote + suffix
 	result = result.replace('https://', '')
 	result = result.replace('http://', '')
 	return result
+
+def sendMessage(page, quote, suffix, post_link):
+	print(page, cut(quote, suffix, 4000))
+	douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
+	addToExisting(post_link)
+
+def canSend(image):
+	try:
+		r = debug_group.send_photo(image)
+		r.delete()
+		return True
+	except:
+		return False
 
 # @log_on_fail(debug_group)
 def postTele(page, item):
@@ -102,38 +121,37 @@ def postTele(page, item):
 		new_status = new_status.parent
 	reshared_by = new_status.find('span', class_='reshared_by')
 	if reshared_by:
-		# print('reshared_by', reshared_by.find('a')['href'])
+		print('reshared_by', reshared_by.find('a')['href'])
 		pass
 
 	suffix =  ' [%s](%s)' % (author, post_link)
 	if '/status/' in post_link:
 		soup = getSoup(post_link).find('div', class_='status-item')	
-		images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')][:9]
+		images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')]
+		images = [x for x in images if canSend(x)]
+		images = images[:9]
 		raw_images = images[:]
 		if images:
 			cap = cut(quote, suffix, 1000)
 			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
 				[InputMediaPhoto(url) for url in images[1:]]
+			print(raw_images)
 			print(page, post_link, cap)
 			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
 			addToExisting(post_link)
 			return
 
 	if '/note/' in post_link:
-		url = export_to_telegraph.export(post_link) or post_link
-		quote = url + ' ' + quote
-		# TODO: refactor
-		douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
-		addToExisting(post_link)
+		url = export_to_telegraph.export(post_link, force=True)
+		sendMessage(page, url + ' ' + quote, suffix, post_link)
 		return
 
 	if quote and raw_quote.find('a', title=True, href=True):
-		douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
-		addToExisting(post_link)
+		sendMessage(page, quote, suffix, post_link)
 		return
 
 	if item.find('div', class_='url-block'):
-		print(post_link)
+		print('MORE', page, post_link)
 		# print('here')
 		# url = item.find('div', class_='url-block')
 		# url = url.find('a')['href']
@@ -148,7 +166,7 @@ def postTele(page, item):
 		# 	timeout = 10*60)
 
 def start():
-	for page in range(10, 30):
+	for page in range(1, 50):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
