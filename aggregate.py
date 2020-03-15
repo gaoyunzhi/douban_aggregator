@@ -16,6 +16,7 @@ import export_to_telegraph
 import time
 import yaml
 import traceback as tb
+import pic_cut
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -39,6 +40,7 @@ def addToExisting(x):
 	return True
 
 def getSoup(url):
+	time.sleep(5)
 	return BeautifulSoup(cached_url.get(url, {
 		'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)',
 		'cookie': credential['cookie']}), 'html.parser')
@@ -117,16 +119,33 @@ def sendMessage(page, quote, suffix, post_link, item):
 	douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
 	addToExisting(post_link)
 
-def canSend(image):
+def getSend(image):
+	os.system('mkdir tmp_image > /dev/null 2>&1')
+	time.sleep(1)
 	try:
-		r = debug_group.send_photo(image)
-		try:
-			r.delete()
-		except Exception as e:
-			print(str(e))
-		return True
+		with open('tmp_image/1', 'wb') as f:
+			f.write(requests.get(image, stream=True))
+		cuts = [open(x, 'rb') for x in pic_cut.cut('1')]
+		if not cuts:
+			cuts = [image]
+		for cut in cuts:
+			try:
+				r = debug_group.send_photo(cut, timeout = 2*60)
+				yield cut
+				r.delete()
+			except Exception as e:
+				print(image, str(e))
+			try:
+				r.delete()
+			except Exception as e:
+				pass
 	except Exception as e:
-		return False
+		print(image, str(e))
+		pass
+
+	os.system('rm -r tmp_image > /dev/null 2>&1')
+	return result
+
 
 # @log_on_fail(debug_group)
 def postTele(page, item):
@@ -142,7 +161,7 @@ def postTele(page, item):
 	if '/status/' in post_link:
 		soup = getSoup(post_link).find('div', class_='status-item')	
 		images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')]
-		images = [x for x in images if canSend(x)]
+		images = [y for y in getSend(x) for x in images]
 		images = images[:9]
 		raw_images = images[:]
 		if images:
@@ -179,7 +198,6 @@ def start():
 			postTele(page, item)
 		if page % 5 == 0:
 			print(page)
-			time.sleep(page % 31)
 
 if __name__ == '__main__':
 	start()
