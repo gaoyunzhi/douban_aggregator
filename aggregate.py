@@ -68,21 +68,26 @@ def wantSee(item, page):
 		return True
 	return sum(dataCount(item)) > 120 + page
 
+def clearUrl(url):
+	if 'weibo' in url:
+		index = url.find('?')
+		if index > -1:
+			url = url[:index]
+	if url.endswith('/'):
+		url = url[:-1]
+	if '_' in url:
+		url = '[网页链接](%s)' % url
+	url = url.replace('https://', '')
+	url = url.replace('http://', '')
+	return url
+
 def getQuote(raw_quote):
 	if not raw_quote:
 		return ''
 	quote = raw_quote.text.strip()
 	for link in raw_quote.find_all('a', title=True, href=True):
 		url = link['title']
-		url = export_to_telegraph.export(url) or url
-		if 'weibo' in url:
-			index = url.find('?')
-			if index > -1:
-				url = url[:index]
-		if url.endswith('/'):
-			url = url[:-1]
-		if '_' in url:
-			url = '[网页链接](%s)' % url
+		url = clearUrl(export_to_telegraph.export(url) or url)
 		quote = quote.replace(link['href'], ' ' + url + ' ')
 	return quote
 
@@ -95,17 +100,32 @@ def cut(quote, suffix, limit):
 	result = result.replace('http://', '')
 	return result
 
-def sendMessage(page, quote, suffix, post_link):
-	print(page, cut(quote, suffix, 4000))
+def getReshareInfo(item):
+	new_status = item
+	while 'new-status' not in new_status.get('class'):
+		new_status = new_status.parent
+	reshared_by = new_status.find('span', class_='reshared_by')
+	if reshared_by:
+		return ['reshared_by', reshared_by.find('a')['href']]
+	return []
+
+def printDebugInfo(page, post_link, item, quote, suffix):
+	print(*([page, post_link] + getReshareInfo(item) + [cut(quote, suffix, 100)]))
+
+def sendMessage(page, quote, suffix, post_link, item):
+	printDebugInfo(page, post_link, item, quote, suffix)
 	douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
 	addToExisting(post_link)
 
 def canSend(image):
 	try:
 		r = debug_group.send_photo(image)
-		r.delete()
+		try:
+			r.delete()
+		except Exception as e:
+			print(str(e))
 		return True
-	except:
+	except Exception as e:
 		return False
 
 # @log_on_fail(debug_group)
@@ -118,14 +138,6 @@ def postTele(page, item):
 	raw_quote = item.find('blockquote') or ''
 	quote = getQuote(raw_quote)
 
-	new_status = item
-	while 'new-status' not in new_status.get('class'):
-		new_status = new_status.parent
-	reshared_by = new_status.find('span', class_='reshared_by')
-	if reshared_by:
-		print('reshared_by', reshared_by.find('a')['href'])
-		pass
-
 	suffix =  ' [%s](%s)' % (author, post_link)
 	if '/status/' in post_link:
 		soup = getSoup(post_link).find('div', class_='status-item')	
@@ -137,35 +149,26 @@ def postTele(page, item):
 			cap = cut(quote, suffix, 1000)
 			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
 				[InputMediaPhoto(url) for url in images[1:]]
-			print(raw_images)
-			print(page, post_link, cap)
+			printDebugInfo(page, post_link, item, quote, suffix)
 			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
 			addToExisting(post_link)
 			return
 
 	if '/note/' in post_link:
 		url = export_to_telegraph.export(post_link, force=True)
-		sendMessage(page, url + ' ' + quote, suffix, post_link)
+		sendMessage(page, url + ' ' + quote, suffix, post_link, item)
 		return
 
 	if quote and raw_quote.find('a', title=True, href=True):
-		sendMessage(page, quote, suffix, post_link)
+		sendMessage(page, quote, suffix, post_link, item)
 		return
 
 	if item.find('div', class_='url-block'):
-		print('MORE', page, post_link)
-		# print('here')
-		# url = item.find('div', class_='url-block')
-		# url = url.find('a')['href']
-		# url = export_to_telegraph.export(url) or url
-		# if len(url) < 80:
-		# 	url_text = url
-		# else:
-		# 	url_text = '网页链接'
-		# return douban_channel.send_message(
-		# 	quote + ' [%s](%s) [%s](%s)' % (url_text, url, author, post_link), 
-		# 	parse_mode='Markdown',
-		# 	timeout = 10*60)
+		url = item.find('div', class_='url-block')
+		url = url.find('a')['href']
+		url = clearUrl(export_to_telegraph.export(url) or url)
+		sendMessage(page, quote, ' ' + url + ' ' + suffix, post_link, item)
+		return
 
 def start():
 	for page in range(1, 50):
