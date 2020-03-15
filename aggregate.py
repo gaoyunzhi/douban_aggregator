@@ -27,7 +27,11 @@ douban_channel = tele.bot.get_chat(-1001206770471)
 
 os.system('touch existing')
 with open('existing') as f:
-	existing = [x.strip() for x in f.readlines()]
+	existing = set(x.strip() for x in f.readlines())
+
+def saveExisting():
+	with open('existing', 'w') as f:
+		f.write('\n'.join(existing))
 
 def getUrl(url):
 	return cached_url.get(url, {'cookie': credential['cookie']})
@@ -53,9 +57,9 @@ def wantSee(item, page):
 		return False
 	if matchKey(item.text, BLACKLIST):
 		return False
-	if sum(dataCount(item)) < 120 + page * 5: 
-		return False
-	return True
+	if 'people/gyz' in str(item.parent):
+		return True
+	return sum(dataCount(item)) > 120 + page * 5
 
 def isGoodImg(url, check_height = False):
 	try:
