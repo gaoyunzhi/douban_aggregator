@@ -11,7 +11,6 @@ import os
 import cached_url
 from telegram.ext import Updater
 from telegram import InputMediaPhoto
-from telegram_util import log_on_fail
 import export_to_telegraph
 import time
 import yaml
@@ -40,11 +39,11 @@ def addToExisting(x):
 		f.write('\n' + x)
 	return True
 
-def getSoup(url):
-	time.sleep(5)
+def getSoup(url, force_cache=False):
+	# time.sleep(5)
 	return BeautifulSoup(cached_url.get(url, {
 		'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)',
-		'cookie': credential['cookie']}), 'html.parser')
+		'cookie': credential['cookie']}, force_cache=force_cache), 'html.parser')
 
 def hasQuote(item):
 	if not item.find('blockquote'):
@@ -120,27 +119,29 @@ def sendMessage(page, quote, suffix, post_link, item):
 	douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
 	addToExisting(post_link)
 
-def getSend(image):
+def formatImages(images, post_link):
 	os.system('mkdir tmp_image > /dev/null 2>&1')
-	time.sleep(1)
-	print(image)
-	fn = 'tmp_image/1' + os.path.splitext(image)[1]
-	with open(fn, 'wb') as f:
-		f.write(requests.get(image, stream=True).content)
-	cuts = [open(x, 'rb') for x in pic_cut.cut(fn)]
-	if not cuts:
-		cuts = [open(fn, 'rb')]
-	for cut in cuts:
-		r = debug_group.send_photo(cut, timeout = 2*60)
-		yield cut
-		r.delete()
-		try:
+	result = []
+	prefix = post_link.strip().split('/')[-1]
+	for index, image in enumerate(images):
+		fn = 'tmp_image/' + prefix + str(index) + os.path.splitext(image)[1]
+		with open(fn, 'wb') as f:
+			f.write(cached_url.get(image, force_cache=True, mode='b'))
+		cuts = list(pic_cut.cut(fn))
+		if not cuts:
+			cuts = [fn]
+		for cut in cuts:
+			r = debug_group.send_photo(open(cut, 'rb'), timeout = 2*60)
+			result.append(cut)
 			r.delete()
-		except Exception as e:
-			pass
-	# os.system('rm -r tmp_image > /dev/null 2>&1')
+			try:
+				r.delete()
+			except Exception as e:
+				pass
+			if len(result) >= 9:
+				return result
+	return result
 
-# @log_on_fail(debug_group)
 def postTele(page, item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	if post_link.strip() in existing:
@@ -152,15 +153,13 @@ def postTele(page, item):
 
 	suffix =  ' [%s](%s)' % (author, post_link)
 	if '/status/' in post_link:
-		soup = getSoup(post_link).find('div', class_='status-item')	
-		images = [x['href'].strip() for x in soup.find_all('a', class_='view-large')]
-		images = [y for x in images for y in getSend(x)]
-		images = images[:9]
-		raw_images = images[:]
+		soup = getSoup(post_link, force_cache=True).find('div', class_='status-item')	
+		images = [x['src'].strip() for x in soup.find_all('img', class_='upload-pic')]
+		images = formatImages(images, post_link)
 		if images:
 			cap = cut(quote, suffix, 1000)
-			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + \
-				[InputMediaPhoto(url) for url in images[1:]]
+			group = [InputMediaPhoto(open(images[0], 'rb'), caption=cap, parse_mode='Markdown')] + \
+				[InputMediaPhoto(open(x, 'rb')) for x in images[1:]]
 			printDebugInfo(page, post_link, item, quote, suffix)
 			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
 			addToExisting(post_link)
