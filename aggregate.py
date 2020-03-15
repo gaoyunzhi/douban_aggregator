@@ -37,8 +37,9 @@ def addToExisting(x):
 	with open('existing', 'w') as f:
 		f.write('\n'.join(existing))
 
-def getUrl(url):
-	return cached_url.get(url, {'cookie': credential['cookie']})
+def getSoup(url):
+	return BeautifulSoup(cached_url.get(url, {'cookie': credential['cookie']}), 
+		'html.parser')
 
 def hasQuote(item):
 	if not item.find('blockquote'):
@@ -78,10 +79,12 @@ def postTele(item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	if not addToExisting(post_link):
 		return
+
+	author = item.find('a', class_='lnk-people').text.strip()	
 	quote = item.find('blockquote') or ''
-	author = item.find('a', class_='lnk-people').text.strip()
 	if quote:
 		quote = quote.text.strip()
+
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
@@ -90,36 +93,30 @@ def postTele(item):
 			url_text = url
 		else:
 			url_text = '网页链接'
-		try:
-			douban_channel.send_message(
-				quote + ' [%s](%s) [%s](%s)' % (url_text, url, author, post_link), 
-				parse_mode='Markdown',
-				timeout = 10*60)
-		except Exception as e:
-			print(e)
-			print(quote + ' [%s](%s)' % (url_text, url))
-		return
-	if item.find('div', class_='pics-wrapper'):
-		images = [x['href'].strip() for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
-		if len(images) > 0:
-			if len(images) > 1 or isGoodImg(images[0], check_height = True):
-				cap = quote + ' [%s](%s)' % (author, post_link)
-				group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + [InputMediaPhoto(url) for url in images[1:]]
-				try:
-					tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
-				except Exception as e:
-					print(e)
-					print(images)
+		return douban_channel.send_message(
+			quote + ' [%s](%s) [%s](%s)' % (url_text, url, author, post_link), 
+			parse_mode='Markdown',
+			timeout = 10*60)
+	# if item.find('div', class_='pics-wrapper'):
+	# 	images = [x['href'].strip() for x in item.find_all('a', class_='view-large') if isGoodImg(x['href'])]
+	# 	if len(images) > 0:
+	# 		if len(images) > 1 or isGoodImg(images[0], check_height = True):
+	# 			cap = quote + ' [%s](%s)' % (author, post_link)
+	# 			group = [InputMediaPhoto(images[0], caption=cap, parse_mode='Markdown')] + [InputMediaPhoto(url) for url in images[1:]]
+	# 			try:
+	# 				return tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
+	# 			except Exception as e:
+	# 				print(e)
+	# 				print(images)
 
 def start():
 	for page in range(50):
 		url = 'https://www.douban.com/?p=' + str(page)
-		soup = BeautifulSoup(getUrl(url), 'html.parser')
-		for item in soup.find_all('div', class_='status-item'):
+		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
 				continue
-			postTele(item)
-			return # testing
+			if postTele(item):
+				return # testing
 		# if page % 5 == 0:
 		# 	time.sleep(page % 31)
 
