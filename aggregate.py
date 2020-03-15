@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
-'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿']
+'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿', '转发抽奖']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey
@@ -66,7 +66,7 @@ def wantSee(item, page):
 		return False
 	if 'people/gyz' in str(item.parent):
 		return True
-	return sum(dataCount(item)) > 120 + page * 5
+	return sum(dataCount(item)) > 120 + page
 
 def getQuote(raw_quote):
 	if not raw_quote:
@@ -168,7 +168,7 @@ def postTele(page, item):
 		# 	timeout = 10*60)
 
 def start():
-	for page in range(1, 100):
+	for page in range(1, 50):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
