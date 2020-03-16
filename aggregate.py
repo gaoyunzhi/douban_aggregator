@@ -5,7 +5,7 @@ BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '�
 '过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿', '转发抽奖']
 
 from bs4 import BeautifulSoup
-from telegram_util import matchKey
+from telegram_util import matchKey, cutCaption
 import sys
 import os
 import cached_url
@@ -105,15 +105,6 @@ def getQuote(raw_quote):
 		quote = quote.replace(link['href'], ' ' + url + ' ')
 	return quote
 
-def cut(quote, suffix, limit):
-	if len(quote) + len(suffix) > limit:
-		result = quote[:limit - len(suffix)] + '...' + suffix
-	else:
-		result = quote + suffix
-	result = result.replace('https://', '')
-	result = result.replace('http://', '')
-	return result
-
 def getReshareInfo(item):
 	new_status = item
 	while 'new-status' not in new_status.get('class'):
@@ -124,35 +115,12 @@ def getReshareInfo(item):
 	return []
 
 def printDebugInfo(page, post_link, item, quote, suffix):
-	print(*([page, post_link] + getReshareInfo(item) + [cut(quote, suffix, 100)]))
+	print(*([page, post_link] + getReshareInfo(item) + [cutCaption(quote, suffix, 100)]))
 
 def sendMessage(page, quote, suffix, post_link, item):
 	printDebugInfo(page, post_link, item, quote, suffix)
-	douban_channel.send_message(cut(quote, suffix, 4000), parse_mode='Markdown')
+	douban_channel.send_message(cutCaption(quote, suffix, 4000), parse_mode='Markdown')
 	addToExisting(post_link)
-
-def formatImages(images, post_link):
-	os.system('mkdir tmp_image > /dev/null 2>&1')
-	result = []
-	prefix = 'tmp_image/' + post_link.strip().split('/')[-1] + '_'
-	for index, image in enumerate(images):
-		fn = prefix + str(index) + os.path.splitext(image)[1]
-		with open(fn, 'wb') as f:
-			f.write(cached_url.get(image, force_cache=True, mode='b'))
-		cuts = list(pic_cut.cut(fn))
-		if not cuts:
-			cuts = [fn]
-		for cut in cuts:
-			r = debug_group.send_photo(open(cut, 'rb'), timeout = 2*60)
-			result.append(cut)
-			r.delete()
-			try:
-				r.delete()
-			except Exception as e:
-				pass
-			if len(result) >= 9:
-				return result
-	return result
 
 def postTele(page, item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
@@ -167,9 +135,9 @@ def postTele(page, item):
 	if '/status/' in post_link:
 		soup = getSoup(post_link, force_cache=True).find('div', class_='status-item')	
 		images = [x['src'].strip() for x in soup.find_all('img', class_='upload-pic')]
-		images = formatImages(images, post_link)
+		images = pic_cut.getCutImages(images)
 		if images:
-			cap = cut(quote, suffix, 1000)
+			cap = cutCaption(quote, suffix, 1000)
 			group = [InputMediaPhoto(open(images[0], 'rb'), caption=cap, parse_mode='Markdown')] + \
 				[InputMediaPhoto(open(x, 'rb')) for x in images[1:]]
 			printDebugInfo(page, post_link, item, quote, suffix)
