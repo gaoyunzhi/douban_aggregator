@@ -162,7 +162,7 @@ def postTele(page, item):
 		return
 
 def start():
-	for page in range(1, 50):
+	for page in range(1, 100):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
