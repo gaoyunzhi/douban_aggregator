@@ -48,11 +48,10 @@ def getSoup(url, force_cache=False):
 	if num_requests < 2:
 		num_requests += 1
 	else:
-		if time.time() - last_request < 5:
-			time.sleep(5 + last_request - time.time())
+		if time.time() - last_request < 10:
+			time.sleep(10 + last_request - time.time())
 			last_request = time.time()
 	return BeautifulSoup(cached_url.get(url, {
-		'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)',
 		'cookie': credential['cookie']}, force_cache=force_cache), 'html.parser')
 
 def hasQuote(item):
