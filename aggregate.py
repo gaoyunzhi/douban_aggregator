@@ -99,7 +99,8 @@ def clearUrl(url):
 def getQuote(raw_quote):
 	if not raw_quote:
 		return ''
-	quote = raw_quote.get_text(separator="\n").strip()
+	quote = BeautifulSoup(str(raw_quote).replace('<br/>', '\n'), 
+		features='lxml').text.strip()
 	for link in raw_quote.find_all('a', title=True, href=True):
 		url = link['title']
 		url = clearUrl(export_to_telegraph.export(url) or url)
