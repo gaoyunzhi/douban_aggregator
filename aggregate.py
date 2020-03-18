@@ -162,9 +162,10 @@ def start():
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
 				continue
-			if postTele(page, item) == 'existing':
+			r = postTele(page, item)
+			if r == 'existing':
 				existing += 1
-			else:
+			elif r != 'text':
 				existing = 0
 			if existing > 20:
 				return # heuristic
