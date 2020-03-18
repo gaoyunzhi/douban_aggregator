@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
-'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿', '转发抽奖']
+'过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿', '转发抽奖',
+'72886662']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey, cutCaption
@@ -18,6 +19,7 @@ import traceback as tb
 import pic_cut
 import requests
 import web_2_album
+import random
 
 last_request = 0
 num_requests = 0
@@ -45,24 +47,13 @@ def addToExisting(x):
 
 def getSoup(url, force_cache=False):
 	global num_requests, last_request
-	if num_requests < 2:
-		num_requests += 1
-	else:
-		if time.time() - last_request < 10:
-			time.sleep(10 + last_request - time.time())
-			last_request = time.time()
+	num_requests += 1
+	wait = min(random.random() * 10, num_requests / 5 * random.random())
+	if time.time() - last_request < wait:
+		time.sleep(wait + last_request - time.time())
+	last_request = time.time()
 	return BeautifulSoup(cached_url.get(url, {
 		'cookie': credential['cookie']}, force_cache=force_cache), 'html.parser')
-
-def hasQuote(item):
-	if not item.find('blockquote'):
-		return False
-	if len(item.find('blockquote').text) < 20:
-		return False
-	return True
-
-def isBookOrMovie(item):
-	return item.find('div', class_='bd book') or item.find('div', class_='bd movie')
 
 def dataCount(item):
 	for x in item.find_all('span', class_='count'):
@@ -71,12 +62,10 @@ def dataCount(item):
 			yield r
 
 def wantSee(item, page):
-	if (not hasQuote(item)) and isBookOrMovie(item):
-		return False
-	if matchKey(item.text, BLACKLIST):
-		return False
 	if 'people/gyz' in str(item.parent):
 		return True
+	if matchKey(str(item), BLACKLIST):
+		return False
 	require = 120 + page
 	if 'people/renjiananhuo' in str(item.parent):
 		require *= 4 # 这人太火，发什么都有人点赞。。。
@@ -146,8 +135,10 @@ def postTele(page, item):
 			addToExisting(post_link)
 			return
 
-	if '/note/' in post_link:
-		url = export_to_telegraph.export(post_link, force=True)
+	note = item.find('div', class_='note-block')
+	if note:
+		note = note['data-url']
+		url = export_to_telegraph.export(note, force=True)
 		sendMessage(page, url + ' ' + quote, suffix, post_link, item)
 		return
 
