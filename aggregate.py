@@ -133,33 +133,37 @@ def postTele(page, item):
 			printDebugInfo(page, post_link, item, quote, suffix)
 			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
 			addToExisting(post_link)
-			return
+			return True
 
 	note = item.find('div', class_='note-block')
 	if note:
 		note = note['data-url']
 		url = export_to_telegraph.export(note, force=True)
 		sendMessage(page, url + ' ' + quote, suffix, post_link, item)
-		return
+		return True
 
 	if quote and raw_quote.find('a', title=True, href=True):
 		sendMessage(page, quote, suffix, post_link, item)
-		return
+		return True
 
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
 		url = clearUrl(export_to_telegraph.export(url) or url)
 		sendMessage(page, quote, ' ' + url + ' ' + suffix, post_link, item)
-		return
+		return True
 
 def start():
+	lastNewPage = 0
 	for page in range(1, 100):
+		if page > lastNewPage + 20:
+			break # heuristic
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
 				continue
-			postTele(page, item)
+			if postTele(page, item):
+				lastNewPage = page
 		if page % 5 == 0:
 			print(page)
 
