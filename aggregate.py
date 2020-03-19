@@ -155,7 +155,14 @@ def postTele(page, item):
 
 	return 'text'
 
+def removeOldFiles(d):
+	for x in os.listdir(d):
+		if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72:
+			os.system('rm ' + d + '/' + x)
+
 def start():
+	removeOldFiles('tmp')
+	removeOldFiles('tmp_image')
 	existing = 0
 	for page in range(1, 100):
 		url = 'https://www.douban.com/?p=' + str(page)
