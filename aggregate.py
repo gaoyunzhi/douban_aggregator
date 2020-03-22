@@ -3,7 +3,7 @@
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
 '过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿', '转发抽奖',
-'72886662']
+'72886662', '随机抽', '转发这条广播', '抽奖小助手', '散福利']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey, cutCaption
