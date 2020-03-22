@@ -117,11 +117,10 @@ def postTele(page, item):
 	if post_link.strip() in existing:
 		return 'existing'
 
-	author = item.find('a', class_='lnk-people').text.strip()	
 	raw_quote = item.find('blockquote') or ''
 	quote = getQuote(raw_quote)
 
-	suffix =  ' [%s](%s)' % (author, post_link)
+	suffix =  ' [原文](%s)' % post_link
 	if '/status/' in post_link:
 		soup = getSoup(post_link, force_cache=True).find('div', class_='status-item')	
 		images = [x['src'].strip() for x in soup.find_all('img', class_='upload-pic')]
