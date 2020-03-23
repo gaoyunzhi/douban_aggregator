@@ -71,44 +71,25 @@ def wantSee(item, page):
 		require *= 4 # 这人太火，发什么都有人点赞。。。
 	return sum(dataCount(item)) > require
 
-def clearUrl(url):
-	if 'weibo' in url:
-		index = url.find('?')
-		if index > -1:
-			url = url[:index]
-	if url.endswith('/'):
-		url = url[:-1]
-	if '_' in url:
-		url = '[网页链接](%s)' % url
-	url = url.replace('https://', '')
-	url = url.replace('http://', '')
-	return url
-
-def getQuote(raw_quote):
-	if not raw_quote:
-		return ''
-	quote = BeautifulSoup(str(raw_quote).replace('<br/>', '\n'), 
-		features='lxml').text.strip()
-	for link in raw_quote.find_all('a', title=True, href=True):
-		url = link['title']
-		url = clearUrl(export_to_telegraph.export(url) or url)
-		quote = quote.replace(link['href'], ' ' + url + ' ')
-	return quote
-
-def getReshareInfo(item):
+def getReshareLink(item):
 	new_status = item
 	while 'new-status' not in new_status.get('class'):
 		new_status = new_status.parent
 	reshared_by = new_status.find('span', class_='reshared_by')
 	if reshared_by and reshared_by.find('a'):
-		return ['reshared_by', reshared_by.find('a')['href']]
+		return reshared_by.find('a')['href']
+
+def getReshareInfo(item):
+	link = getReshareLink(item)
+	if link:
+		return ['reshared_by', link]
 	return []
 
-def printDebugInfo(page, post_link, item, quote, suffix):
-	print(*([page, post_link] + getReshareInfo(item) + [cutCaption(quote, suffix, 100)]))
+def printDebugInfo(page, post_link, item, quote):
+	print(*([page, post_link] + getReshareInfo(item) + [cutCaption(quote, '', 100)]))
 
 def sendMessage(page, quote, suffix, post_link, item):
-	printDebugInfo(page, post_link, item, quote, suffix)
+	printDebugInfo(page, post_link, item, quote)
 	douban_channel.send_message(cutCaption(quote, suffix, 4000), parse_mode='Markdown')
 	addToExisting(post_link)
 
@@ -118,18 +99,15 @@ def postTele(page, item):
 		return 'existing'
 
 	raw_quote = item.find('blockquote') or ''
-	quote = getQuote(raw_quote)
+	quote = export_to_telegraph.exportAllInText(raw_quote)
 
 	suffix =  ' [source](%s)' % post_link
 	if '/status/' in post_link:
-		soup = getSoup(post_link, force_cache=True).find('div', class_='status-item')	
-		images = [x['src'].strip() for x in soup.find_all('img', class_='upload-pic')]
-		images = pic_cut.getCutImages(images)
-		if images:
-			cap = cutCaption(quote, suffix, 1000)
-			group = [InputMediaPhoto(open(images[0], 'rb'), caption=cap, parse_mode='Markdown')] + \
-				[InputMediaPhoto(open(x, 'rb')) for x in images[1:]]
-			printDebugInfo(page, post_link, item, quote, suffix)
+		r = web_2_album.get(post_link, force_cache=True)
+		reshare_link = getReshareInfo(item)
+		if r.imgs:
+			r.quote = 
+			printDebugInfo(page, post_link, item, quote)
 			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
 			addToExisting(post_link)
 			return 'album'
@@ -148,7 +126,7 @@ def postTele(page, item):
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
-		url = clearUrl(export_to_telegraph.export(url) or url)
+		url = export_to_telegraph.clearUrl(export_to_telegraph.export(url) or url)
 		sendMessage(page, quote, ' ' + url + ' ' + suffix, post_link, item)
 		return 'url'
 
@@ -158,8 +136,6 @@ def removeOldFiles(d):
 	for x in os.listdir(d):
 		if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72:
 			os.system('rm ' + d + '/' + x)
-
-
 
 def start():
 	removeOldFiles('tmp')
