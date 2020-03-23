@@ -100,7 +100,7 @@ def getReshareInfo(item):
 	while 'new-status' not in new_status.get('class'):
 		new_status = new_status.parent
 	reshared_by = new_status.find('span', class_='reshared_by')
-	if reshared_by:
+	if reshared_by and reshared_by.find('a'):
 		return ['reshared_by', reshared_by.find('a')['href']]
 	return []
 
@@ -159,11 +159,17 @@ def removeOldFiles(d):
 		if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72:
 			os.system('rm ' + d + '/' + x)
 
+
+
 def start():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
 	existing = 0
-	for page in range(1, 100):
+	try:
+		start = int(sys.argv[1])
+	except:
+		start = 1
+	for page in range(start, 100):
 		url = 'https://www.douban.com/?p=' + str(page)
 		for item in getSoup(url).find_all('div', class_='status-item'):
 			if not wantSee(item, page):
