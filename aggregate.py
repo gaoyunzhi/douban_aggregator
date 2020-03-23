@@ -3,7 +3,7 @@
 
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
 '过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿', '转发抽奖',
-'72886662', '随机抽', '转发这条广播', '抽奖小助手', '散福利']
+'72886662', '随机抽', '转发这条广播', '抽奖小助手', '散福利', '送福利', '求转扩']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey, cutCaption
@@ -44,6 +44,7 @@ def getSoup(url, force_cache=False):
 	num_requests += 1
 	wait = min(random.random() * 10, num_requests / 5 * random.random())
 	if time.time() - last_request < wait:
+		print('wait', wait + last_request - time.time())
 		time.sleep(wait + last_request - time.time())
 	last_request = time.time()
 	return BeautifulSoup(cached_url.get(url, {
@@ -65,13 +66,15 @@ def wantSee(item, page):
 		require *= 4 # 这人太火，发什么都有人点赞。。。
 	return sum(dataCount(item)) > require
 
-def getReshareLink(item):
+def getSource(item):
 	new_status = item
 	while 'new-status' not in new_status.get('class'):
 		new_status = new_status.parent
-	reshared_by = new_status.find('span', class_='reshared_by')
-	if reshared_by and reshared_by.find('a'):
-		return reshared_by.find('a')['href']
+	for d in new_status.find_all('div'):
+		if d.attrs:
+			url = d.get('data-status-url', '').strip()
+			if url:
+				return url
 
 def sendMessage(page, quote, suffix, post_link, item):
 	douban_channel.send_message(cutCaption(quote, suffix, 4000), parse_mode='Markdown')
@@ -87,6 +90,7 @@ def getResult(post_link, item):
 		r = web_2_album.get(post_link, force_cache=True)
 		r.cap = quote
 		if r.imgs:
+			print(post_link, r.imgs, r.cap)
 			return r
 
 	note = item.find('div', class_='note-block')
@@ -109,7 +113,8 @@ def getResult(post_link, item):
 
 def postTele(page, item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
-	source = getReshareInfo(item) or post_link
+	source = getSource(item) or post_link
+
 	if source.strip() in existing:
 		return 'existing'
 	if post_link.strip() in existing:
@@ -118,6 +123,8 @@ def postTele(page, item):
 	result = getResult(post_link, item)
 	if result:
 		album_sender.send(douban_channel, source, result)
+		addToExisting(post_link)
+		addToExisting(source)
 		return 'sent'
 
 def removeOldFiles(d):
@@ -126,9 +133,9 @@ def removeOldFiles(d):
 			os.system('rm ' + d + '/' + x)
 
 def start():
-	removeOldFiles('tmp')
-	removeOldFiles('tmp_image')
-	os.system('pip3 install --user -r requirements.txt --upgrade')
+	# removeOldFiles('tmp')
+	# removeOldFiles('tmp_image')
+	# os.system('pip3 install --user -r requirements.txt --upgrade')
 	existing = 0
 	try:
 		start = int(sys.argv[1])
