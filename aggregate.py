@@ -44,7 +44,6 @@ def getSoup(url, force_cache=False):
 	num_requests += 1
 	wait = min(random.random() * 10, num_requests / 5 * random.random())
 	if time.time() - last_request < wait:
-		print('wait', wait + last_request - time.time())
 		time.sleep(wait + last_request - time.time())
 	last_request = time.time()
 	return BeautifulSoup(cached_url.get(url, {
@@ -133,9 +132,9 @@ def removeOldFiles(d):
 			os.system('rm ' + d + '/' + x)
 
 def start():
-	# removeOldFiles('tmp')
-	# removeOldFiles('tmp_image')
-	# os.system('pip3 install --user -r requirements.txt --upgrade')
+	removeOldFiles('tmp')
+	removeOldFiles('tmp_image')
+	os.system('pip3 install --user -r requirements.txt --upgrade')
 	existing = 0
 	try:
 		start = int(sys.argv[1])
