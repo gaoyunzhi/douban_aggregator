@@ -120,7 +120,7 @@ def postTele(page, item):
 	raw_quote = item.find('blockquote') or ''
 	quote = getQuote(raw_quote)
 
-	suffix =  ' [原文](%s)' % post_link
+	suffix =  ' [source](%s)' % post_link
 	if '/status/' in post_link:
 		soup = getSoup(post_link, force_cache=True).find('div', class_='status-item')	
 		images = [x['src'].strip() for x in soup.find_all('img', class_='upload-pic')]
