@@ -11,15 +11,12 @@ import sys
 import os
 import cached_url
 from telegram.ext import Updater
-from telegram import InputMediaPhoto
 import export_to_telegraph
 import time
 import yaml
-import traceback as tb
-import pic_cut
-import requests
 import web_2_album
 import random
+import album_sender
 
 last_request = 0
 num_requests = 0
@@ -38,12 +35,9 @@ with open('existing') as f:
 
 def addToExisting(x):
 	x = x.strip()
-	if x in existing:
-		return False
 	existing.add(x)
 	with open('existing', 'a') as f:
 		f.write('\n' + x)
-	return True
 
 def getSoup(url, force_cache=False):
 	global num_requests, last_request
@@ -79,58 +73,52 @@ def getReshareLink(item):
 	if reshared_by and reshared_by.find('a'):
 		return reshared_by.find('a')['href']
 
-def getReshareInfo(item):
-	link = getReshareLink(item)
-	if link:
-		return ['reshared_by', link]
-	return []
-
-def printDebugInfo(page, post_link, item, quote):
-	print(*([page, post_link] + getReshareInfo(item) + [cutCaption(quote, '', 100)]))
-
 def sendMessage(page, quote, suffix, post_link, item):
-	printDebugInfo(page, post_link, item, quote)
 	douban_channel.send_message(cutCaption(quote, suffix, 4000), parse_mode='Markdown')
 	addToExisting(post_link)
 
-def postTele(page, item):
-	post_link = item.find('span', class_='created_at').find('a')['href']
-	if post_link.strip() in existing:
-		return 'existing'
-
+def getResult(post_link, item):
 	raw_quote = item.find('blockquote') or ''
 	quote = export_to_telegraph.exportAllInText(raw_quote)
 
-	suffix =  ' [source](%s)' % post_link
+	r = web_2_album.Result()
+
 	if '/status/' in post_link:
 		r = web_2_album.get(post_link, force_cache=True)
-		reshare_link = getReshareInfo(item)
+		r.cap = quote
 		if r.imgs:
-			r.quote = 
-			printDebugInfo(page, post_link, item, quote)
-			tele.bot.send_media_group(douban_channel.id, group, timeout = 20*60)
-			addToExisting(post_link)
-			return 'album'
+			return r
 
 	note = item.find('div', class_='note-block')
 	if note:
 		note = note['data-url']
 		url = export_to_telegraph.export(note, force=True)
-		sendMessage(page, url + ' ' + quote, suffix, post_link, item)
-		return 'note'
+		r.cap = cutCaption(quote, url, 4000)
+		return r
 
 	if quote and raw_quote.find('a', title=True, href=True):
-		sendMessage(page, quote, suffix, post_link, item)
-		return 'link'
+		r.cap = quote
+		return r
 
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
 		url = export_to_telegraph.clearUrl(export_to_telegraph.export(url) or url)
-		sendMessage(page, quote, ' ' + url + ' ' + suffix, post_link, item)
-		return 'url'
+		r.cap = cutCaption(quote, url, 4000)
+		return r
 
-	return 'text'
+def postTele(page, item):
+	post_link = item.find('span', class_='created_at').find('a')['href']
+	source = getReshareInfo(item) or post_link
+	if source.strip() in existing:
+		return 'existing'
+	if post_link.strip() in existing:
+		return 'repeated_share'
+
+	result = getResult(post_link, item)
+	if result:
+		album_sender.send(douban_channel, source, result)
+		return 'sent'
 
 def removeOldFiles(d):
 	for x in os.listdir(d):
@@ -140,6 +128,7 @@ def removeOldFiles(d):
 def start():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
+	os.system('pip3 install --user -r requirements.txt --upgrade')
 	existing = 0
 	try:
 		start = int(sys.argv[1])
@@ -153,7 +142,7 @@ def start():
 			r = postTele(page, item)
 			if r == 'existing':
 				existing += 1
-			elif r != 'text':
+			elif r == 'sent':
 				existing = 0
 			if existing > 20:
 				return # heuristic
