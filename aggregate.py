@@ -4,7 +4,7 @@
 BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '恶臭扑鼻', 
 '过分傻屌', '傻逼无限', '淘宝店', '林爸爸', '求转发', '拙棘', '幸运儿', '转发抽奖',
 '72886662', '随机抽', '转发这条广播', '抽奖小助手', '散福利', '送福利', '求转扩',
-'转发赠书']
+'转发赠书', '转发评论', '交好运']
 
 from bs4 import BeautifulSoup
 from telegram_util import matchKey, cutCaption
@@ -143,7 +143,10 @@ def start():
 		start = 1
 	for page in range(start, 100):
 		url = 'https://www.douban.com/?p=' + str(page)
-		for item in getSoup(url).find_all('div', class_='status-item'):
+		items = list(getSoup(url).find_all('div', class_='status-item'))
+		if not items:
+			break
+		for item in items:
 			if not wantSee(item, page):
 				continue
 			r = postTele(page, item)
