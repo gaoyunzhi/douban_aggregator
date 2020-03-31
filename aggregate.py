@@ -7,7 +7,7 @@ BLACKLIST = ['包邮', '闲鱼', '收藏图书到豆列', '关注了成员:', '�
 '转发赠书', '转发评论', '交好运', '保佑转运', '请求锦鲤', '诚心请求', '内转发', '今日迷信']
 
 from bs4 import BeautifulSoup
-from telegram_util import matchKey, cutCaption
+from telegram_util import matchKey, cutCaption, clearUrl
 import sys
 import os
 import cached_url
@@ -76,9 +76,10 @@ def getSource(item):
 			if url:
 				return url
 
-def sendMessage(page, quote, suffix, post_link, item):
-	douban_channel.send_message(cutCaption(quote, suffix, 4000), parse_mode='Markdown')
-	addToExisting(post_link)
+def getCap(quote, url):
+	if '_' in url:
+		url = '(%s)[%s]' % (url, url)
+	return cutCaption(quote, url, 4000)
 
 def getResult(post_link, item):
 	raw_quote = item.find('blockquote') or ''
@@ -97,7 +98,7 @@ def getResult(post_link, item):
 	if note:
 		note = note['data-url']
 		url = export_to_telegraph.export(note, force=True)
-		r.cap = cutCaption(quote, url, 4000)
+		r.cap = getCap(quote, url)
 		return r
 
 	if quote and raw_quote.find('a', title=True, href=True):
@@ -107,8 +108,8 @@ def getResult(post_link, item):
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
-		url = export_to_telegraph.clearUrl(export_to_telegraph.export(url) or url)
-		r.cap = cutCaption(quote, url, 4000)
+		url = clearUrl(export_to_telegraph.export(url) or url)
+		r.cap = getCap(quote, url)
 		return r
 
 def postTele(page, item):
