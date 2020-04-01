@@ -79,7 +79,7 @@ def getSource(item):
 
 def getCap(quote, url):
 	if '_' in url:
-		url = '(%s)[%s]' % (url, url)
+		url = '[%s](%s)' % (url, url)
 	return cutCaption(quote, url, 4000)
 
 def getResult(post_link, item):
