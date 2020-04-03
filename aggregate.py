@@ -155,7 +155,7 @@ def start():
 				existing += 1
 			elif r == 'sent':
 				existing = 0
-			if existing > 20:
+			if existing > 20 or page * existing > 500:
 				return # heuristic
 		if page % 5 == 0:
 			print(page)
