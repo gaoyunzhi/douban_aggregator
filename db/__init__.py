@@ -53,7 +53,7 @@ class DB(object):
 		self._initBlacklist(name)
 		return self.config[name]['blacklist']
 
-	def existing(self, name, x):
+	def exist(self, name, x):
 		return x.strip() in self.existing[name]
 
 	def addToExisting(self, name, x):

@@ -30,10 +30,10 @@ def dataCount(item):
 		if r:
 			yield r
 
-def wantSee(item, page):
+def wantSee(item, page, channel_name):
 	if 'people/gyz' in str(item.parent):
 		return True
-	if matchKey(str(item), BLACKLIST):
+	if matchKey(str(item), db.getBlacklist(channel_name)):
 		return False
 	require = 120 + page
 	if 'people/renjiananhuo' in str(item.parent):
@@ -90,9 +90,9 @@ def postTele(douban_channel, item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
 
-	if db.existing(douban_channel.username, source.strip()):
+	if db.exist(douban_channel.username, source.strip()):
 		return 'repeated_share'
-	if db.existing(douban_channel.username, post_link.strip()):
+	if db.exist(douban_channel.username, post_link.strip()):
 		return 'existing'
 
 	result = getResult(post_link, item)
@@ -120,7 +120,7 @@ def processChannel(name):
 			debug_group.send_message('Cookie expired for channel: %s' % name)
 			return
 		for item in items:
-			if not wantSee(item, page):
+			if not wantSee(item, page, name):
 				continue
 			r = postTele(douban_channel, item)
 			if r == 'sent' and 'skip' in sys.argv:
