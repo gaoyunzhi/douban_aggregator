@@ -130,9 +130,8 @@ def processChannel(name):
 				existing += 1
 			elif r == 'sent':
 				existing = 0
-			print('existing', existing)
-			if existing > 10 or page * existing > 200:
-				break # heuristic
+		if existing > 10 or page * existing > 200:
+			break
 	print('channel %s finished by %d page' % (name, page))
 
 def removeOldFiles(d):
