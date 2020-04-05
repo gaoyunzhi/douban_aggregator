@@ -1,4 +1,5 @@
 import os
+import yaml
 
 class DB(object):
 	def __init__(self):

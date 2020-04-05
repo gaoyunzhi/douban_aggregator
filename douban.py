@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram_util import matchKey, cutCaption, clearUrl, splitCommand, autoDestroy
+from telegram_util import matchKey, cutCaption, clearUrl, splitCommand, autoDestroy, log_on_fail
 import sys
 import os
-from telegram.ext import Updater
+from telegram.ext import Updater, MessageHandler, Filters
 import export_to_telegraph
 import time
 import yaml
@@ -12,6 +12,7 @@ import web_2_album
 import album_sender
 from soup_get import SoupGet
 from db import DB
+import threading
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -110,7 +111,7 @@ def processChannel(name):
 	except:
 		start = 1
 
-	douban_channel = tele.get_chat(name)
+	douban_channel = tele.bot.get_chat('@' + name)
 	for page in range(start, 100):
 		url = 'https://www.douban.com/?p=' + str(page)
 		items = list(sg.getSoup(url, db.getCookie(name))
@@ -176,8 +177,10 @@ def command(update, context):
 	autoDestroy(msg.reply_text(r), 0.1)
 	msg.delete()
 
-tele.dispatcher.add_handler(MessageHandler(Filters.text & Filters.private, private))
-tele.dispatcher.add_handler(MessageHandler(Filters.channel & Filters.command, command))
+tele.dispatcher.add_handler(MessageHandler(
+	Filters.text & Filters.private, private))
+tele.dispatcher.add_handler(MessageHandler(
+	Filters.update.channel_post & Filters.command, command))
 
 tele.start_polling()
 tele.idle()
