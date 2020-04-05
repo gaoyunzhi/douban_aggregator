@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from bs4 import BeautifulSoup
 from telegram_util import matchKey, cutCaption, clearUrl
 import sys
 import os
-import cached_url
 from telegram.ext import Updater
 import export_to_telegraph
 import time
 import yaml
 import web_2_album
-import random
 import album_sender
 
-last_request = 0
-num_requests = 0
+request_waiting = 
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -23,11 +19,10 @@ export_to_telegraph.token = credential['telegraph_token']
 
 tele = Updater(credential['bot_token'], use_context=True)
 debug_group = tele.bot.get_chat(-1001198682178)
-douban_channel = tele.bot.get_chat(-1001206770471)
 
-os.system('touch existing')
-with open('existing') as f:
-	existing = set(x.strip() for x in f.readlines())
+# os.system('touch existing')
+# with open('existing') as f:
+# 	existing = set(x.strip() for x in f.readlines())
 
 def addToExisting(x):
 	x = x.strip()
@@ -35,15 +30,7 @@ def addToExisting(x):
 	with open('existing', 'a') as f:
 		f.write('\n' + x)
 
-def getSoup(url, force_cache=False):
-	global num_requests, last_request
-	num_requests += 1
-	wait = min(random.random() * 10, num_requests / 5 * random.random())
-	if time.time() - last_request < wait:
-		time.sleep(wait + last_request - time.time())
-	last_request = time.time()
-	return BeautifulSoup(cached_url.get(url, {
-		'cookie': credential['cookie']}, force_cache=force_cache), 'html.parser')
+
 
 def dataCount(item):
 	for x in item.find_all('span', class_='count'):
@@ -131,6 +118,7 @@ def removeOldFiles(d):
 def loopImp():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
+	# TODO: revisit fetch wrong status issue
 	existing = 0
 	try:
 		start = int(sys.argv[1])
