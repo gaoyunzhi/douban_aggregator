@@ -122,6 +122,8 @@ def processChannel(name):
 			if not wantSee(item, page):
 				continue
 			r = postTele(douban_channel, item)
+			if r == 'sent' and 'skip' in sys.argv:
+				return # testing mode, only send one message
 			if r == 'existing':
 				existing += 1
 			elif r == 'sent':

@@ -68,7 +68,7 @@ class DB(object):
 		self.config[channel]['blacklist'] = self.config[channel].get('blacklist', [])
 
 	def _sortBlacklist(self, channel):
-		self.config[channel]['blacklist'] = 
+		self.config[channel]['blacklist'] = \
 			sorted(list(set(self.config[channel]['blacklist'])))
 
 	def _save():
