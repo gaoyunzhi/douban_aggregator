@@ -9,7 +9,7 @@ class DB(object):
 			self.cookie = yaml.load(f, Loader=yaml.FullLoader)
 		self.existing = {}
 		for name in self.getChannels():
-			fn = '%s_existing' % name
+			fn = 'db/%s_existing' % name
 			os.system('touch %s' % fn)
 			with open(fn) as f:
 				self.existing[name] = set(x.strip() for x in f.readlines())
