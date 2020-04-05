@@ -110,6 +110,7 @@ def processChannel(name):
 		start = int(sys.argv[1])
 	except:
 		start = 1
+	print('start processing %s' % name)
 
 	douban_channel = tele.bot.get_chat('@' + name)
 	for page in range(start, 100):
@@ -141,8 +142,8 @@ def removeOldFiles(d):
 def loopImp():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
-	sg.reset()
 	for name in db.getChannels():
+		sg.reset()
 		processChannel(name)
 
 def loop():
