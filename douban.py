@@ -128,7 +128,7 @@ def removeOldFiles(d):
 		if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72:
 			os.system('rm ' + d + '/' + x)
 
-def start():
+def loopImp():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
 	existing = 0
@@ -154,5 +154,17 @@ def start():
 		if page % 5 == 0:
 			print(page)
 
-if __name__ == '__main__':
-	start()
+def loop():
+	loopImp()
+	threading.Timer(60 * 60 * 2, loop).start() 
+
+threading.Timer(1, loop).start()
+
+@log_on_fail(debug_group)
+def private(update, context):
+	update.message.reply_text('Add me to public channel, then use /d_sc to set your douban cookie')
+
+tele.dispatcher.add_handler(MessageHandler(Filters.text & Filters.private, private))
+
+tele.start_polling()
+tele.idle()
