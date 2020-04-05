@@ -139,7 +139,8 @@ def processChannel(name):
 def removeOldFiles(d):
 	try:
 		for x in os.listdir(d):
-			if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72:
+			if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72 or \
+				os.stat(d + '/' + x).st_size < 400:
 				os.system('rm ' + d + '/' + x)
 	except:
 		pass
