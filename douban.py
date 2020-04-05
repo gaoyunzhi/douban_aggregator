@@ -10,8 +10,7 @@ import time
 import yaml
 import web_2_album
 import album_sender
-
-request_waiting = 
+from soup_get import SoupGet
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -19,6 +18,8 @@ export_to_telegraph.token = credential['telegraph_token']
 
 tele = Updater(credential['bot_token'], use_context=True)
 debug_group = tele.bot.get_chat(-1001198682178)
+
+sg = SoupGet()
 
 # os.system('touch existing')
 # with open('existing') as f:
@@ -29,8 +30,6 @@ def addToExisting(x):
 	existing.add(x)
 	with open('existing', 'a') as f:
 		f.write('\n' + x)
-
-
 
 def dataCount(item):
 	for x in item.find_all('span', class_='count'):
@@ -118,6 +117,7 @@ def removeOldFiles(d):
 def loopImp():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
+	sg.reset()
 	# TODO: revisit fetch wrong status issue
 	existing = 0
 	try:
@@ -126,7 +126,7 @@ def loopImp():
 		start = 1
 	for page in range(start, 100):
 		url = 'https://www.douban.com/?p=' + str(page)
-		items = list(getSoup(url).find_all('div', class_='status-item'))
+		items = list(sg.getSoup(url).find_all('div', class_='status-item'))
 		if not items:
 			break
 		for item in items:
