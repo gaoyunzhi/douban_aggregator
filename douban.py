@@ -10,7 +10,7 @@ import time
 import yaml
 import web_2_album
 import album_sender
-from soup_get import SoupGet
+from soup_get import SoupGet, Timer
 from db import DB
 import threading
 
@@ -86,7 +86,7 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
-def postTele(douban_channel, item):
+def postTele(douban_channel, item, timer):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
 
@@ -98,6 +98,7 @@ def postTele(douban_channel, item):
 	result = getResult(post_link, item)
 	if result:
 		r = album_sender.send(douban_channel, source, result)
+		timer.wait(len(r) * 3)
 		db.addToExisting(douban_channel.username, post_link)
 		db.addToExisting(douban_channel.username, source)
 		return 'sent'
@@ -124,8 +125,7 @@ def processChannel(name):
 		for item in items:
 			if not wantSee(item, page, name):
 				continue
-			r = postTele(douban_channel, item)
-			timer.wait(len(r) * 3)
+			r = postTele(douban_channel, item, timer)
 			if r == 'sent' and 'skip' in sys.argv:
 				return # testing mode, only send one message
 			if r == 'existing':
@@ -134,7 +134,7 @@ def processChannel(name):
 				existing = 0
 		if existing > 10 or page * existing > 200:
 			break
-	print('channel %s finished by %d page' % (name, page))
+	print('channel %s finished by visiting %d page' % (name, page))
 
 def removeOldFiles(d):
 	try:

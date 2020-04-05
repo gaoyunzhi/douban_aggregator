@@ -17,8 +17,8 @@ class Timer(object):
 
 class SoupGet(object):
 	def __init__(self):
-		self.reset()
 		self.timer = Timer()
+		self.reset()
 
 	def reset(self):
 		self.num_requests = 0
