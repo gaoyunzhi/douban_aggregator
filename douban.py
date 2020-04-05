@@ -142,8 +142,8 @@ def removeOldFiles(d):
 def loopImp():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
+	sg.reset()
 	for name in db.getChannels():
-		sg.reset()
 		processChannel(name)
 
 def loop():
