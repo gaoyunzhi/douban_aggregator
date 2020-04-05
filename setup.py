@@ -8,15 +8,12 @@ def setup():
 	kill()
 	if 'kill' in str(sys.argv):
 		return 
-	print(str(sys.argv))
-	print(sys.argv)
+	addtional_arg = ' '.join(sys.argv[1:])
+	command = 'python3 douban.py %s' % addtional_arg
 	if 'debug' in str(sys.argv):
-		os.system('python3 douban.py')
-	elif 'skip' in str(sys.argv):
-		os.system('nohup python3 douban.py skip &')
+		os.system(command)
 	else:
-		os.system('nohup python3 douban.py &')
-
+		os.system('nohup %s &' % command)
 
 if __name__ == '__main__':
 	setup()
