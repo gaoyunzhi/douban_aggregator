@@ -135,9 +135,12 @@ def processChannel(name):
 	print('channel %s finished by %d page' % (name, page))
 
 def removeOldFiles(d):
-	for x in os.listdir(d):
-		if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72:
-			os.system('rm ' + d + '/' + x)
+	try:
+		for x in os.listdir(d):
+			if os.path.getmtime(d + '/' + x) < time.time() - 60 * 60 * 72:
+				os.system('rm ' + d + '/' + x)
+	except:
+		pass
 
 def loopImp():
 	removeOldFiles('tmp')
