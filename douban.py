@@ -11,6 +11,7 @@ import yaml
 import web_2_album
 import album_sender
 from soup_get import SoupGet
+from db import DB
 
 with open('credential') as f:
 	credential = yaml.load(f, Loader=yaml.FullLoader)
@@ -20,16 +21,7 @@ tele = Updater(credential['bot_token'], use_context=True)
 debug_group = tele.bot.get_chat(-1001198682178)
 
 sg = SoupGet()
-
-# os.system('touch existing')
-# with open('existing') as f:
-# 	existing = set(x.strip() for x in f.readlines())
-
-def addToExisting(x):
-	x = x.strip()
-	existing.add(x)
-	with open('existing', 'a') as f:
-		f.write('\n' + x)
+db = DB()
 
 def dataCount(item):
 	for x in item.find_all('span', class_='count'):
@@ -93,21 +85,50 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
-def postTele(page, item):
+def postTele(douban_channel, item):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
 
-	if source.strip() in existing:
-		return 'existing'
-	if post_link.strip() in existing:
+	if db.existing(douban_channel.username, source.strip()):
 		return 'repeated_share'
+	if db.existing(douban_channel.username, post_link.strip()):
+		return 'existing'
 
 	result = getResult(post_link, item)
 	if result:
 		album_sender.send(douban_channel, source, result)
-		addToExisting(post_link)
-		addToExisting(source)
+		db.addToExisting(douban_channel.username, post_link)
+		db.addToExisting(douban_channel.username, source)
 		return 'sent'
+
+@log_on_fail(debug_group)
+def processChannel(name):
+	# TODO: revisit fetch wrong status issue
+	existing = 0
+	try:
+		start = int(sys.argv[1])
+	except:
+		start = 1
+
+	douban_channel = tele.get_chat(name)
+	for page in range(start, 100):
+		url = 'https://www.douban.com/?p=' + str(page)
+		items = list(sg.getSoup(url, db.getCookie(name))
+			.find_all('div', class_='status-item'))
+		if not items:
+			debug_group.send_message('Cookie expired for channel: %s' % name)
+			return
+		for item in items:
+			if not wantSee(item, page):
+				continue
+			r = postTele(douban_channel, item)
+			if r == 'existing':
+				existing += 1
+			elif r == 'sent':
+				existing = 0
+			if existing > 20 or page * existing > 500:
+				break # heuristic
+	print('channel %s finished by %d page' % (name, page))
 
 def removeOldFiles(d):
 	for x in os.listdir(d):
@@ -118,29 +139,8 @@ def loopImp():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
 	sg.reset()
-	# TODO: revisit fetch wrong status issue
-	existing = 0
-	try:
-		start = int(sys.argv[1])
-	except:
-		start = 1
-	for page in range(start, 100):
-		url = 'https://www.douban.com/?p=' + str(page)
-		items = list(sg.getSoup(url).find_all('div', class_='status-item'))
-		if not items:
-			break
-		for item in items:
-			if not wantSee(item, page):
-				continue
-			r = postTele(page, item)
-			if r == 'existing':
-				existing += 1
-			elif r == 'sent':
-				existing = 0
-			if existing > 20 or page * existing > 500:
-				return # heuristic
-		if page % 5 == 0:
-			print(page)
+	for name in db.getChannels():
+		processChannel(name)
 
 def loop():
 	loopImp()
