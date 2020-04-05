@@ -38,7 +38,7 @@ class DB(object):
 		return self.config[channel]['blacklist']
 
 	def getChannels(self):
-		return self.cookie.keys()
+		return [x for x in self.cookie.keys() if self.cookie[x]]
 
 	def getCookie(self, name):
 		return self.cookie.get(name)
