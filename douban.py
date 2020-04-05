@@ -130,7 +130,8 @@ def processChannel(name):
 				existing += 1
 			elif r == 'sent':
 				existing = 0
-			if existing > 20 or page * existing > 500:
+			print('existing', existing)
+			if existing > 10 or page * existing > 200:
 				break # heuristic
 	print('channel %s finished by %d page' % (name, page))
 
