@@ -97,7 +97,7 @@ def postTele(douban_channel, item):
 
 	result = getResult(post_link, item)
 	if result:
-		album_sender.send(douban_channel, source, result)
+		r = album_sender.send(douban_channel, source, result)
 		db.addToExisting(douban_channel.username, post_link)
 		db.addToExisting(douban_channel.username, source)
 		return 'sent'
@@ -111,6 +111,7 @@ def processChannel(name):
 	except:
 		start = 1
 	print('start processing %s' % name)
+	timer = Timer()
 
 	douban_channel = tele.bot.get_chat('@' + name)
 	for page in range(start, 100):
@@ -124,6 +125,7 @@ def processChannel(name):
 			if not wantSee(item, page, name):
 				continue
 			r = postTele(douban_channel, item)
+			timer.wait(len(r) * 3)
 			if r == 'sent' and 'skip' in sys.argv:
 				return # testing mode, only send one message
 			if r == 'existing':
