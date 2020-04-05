@@ -164,7 +164,7 @@ def commandInternal(msg):
 	if matchKey(command, ['/d_br', 'blacklist_br']):
 		return db.blacklistRemove(msg.chat.username, text)
 	if matchKey(command, ['/d_bl', 'blacklist_list']):
-		return 'blacklist:\n  ' + '  \n'.join(db.getBlacklist(msg.chat.username))
+		return 'blacklist:\n' + '\n'.join(db.getBlacklist(msg.chat.username))
 
 @log_on_fail(debug_group)
 def command(update, context):

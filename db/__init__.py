@@ -72,6 +72,6 @@ class DB(object):
 		self.config[channel]['blacklist'] = \
 			sorted(list(set(self.config[channel]['blacklist'])))
 
-	def _save():
+	def _save(self):
 		with open('db/config', 'w') as f:
 			f.write(yaml.dump(self.config, sort_keys=True, indent=2))
