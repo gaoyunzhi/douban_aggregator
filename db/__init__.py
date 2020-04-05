@@ -15,22 +15,38 @@ class DB(object):
 
 	def blacklistAdd(self, channel, word):
 		self._initBlacklist(channel)
+		if word in self.config[channel]['blacklist']:
+			return 'fail'
 		self.config[channel]['blacklist'].append(word)
 		self._sortBlacklist(channel)
 		self._save()
+		return 'success'
 
 	def blacklistRemove(self, channel, word):
 		self._initBlacklist(channel)
 		if word in self.config[channel]['blacklist']:
 			self.config[channel]['blacklist'].remove(word)
+		else:
+			return 'fail'
 		self._sortBlacklist(channel)
 		self._save()
+		return 'success'
+
+	def getBlacklist(self, channel):
+		self._initBlacklist(channel)
+		return self.config[channel]['blacklist']
 
 	def getChannels(self):
 		return self.cookie.keys()
 
 	def getCookie(self, name):
 		return self.cookie.get(name)
+
+	def setCookie(self, name, cookie):
+		self.cookie[name] = cookie
+		with open('db/cookie', 'w') as f:
+			f.write(yaml.dump(self.cookie, sort_keys=True, indent=2))
+		return 'success'
 
 	def getBlacklist(self, name):
 		self._initBlacklist(name)

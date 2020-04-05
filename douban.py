@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram_util import matchKey, cutCaption, clearUrl
+from telegram_util import matchKey, cutCaption, clearUrl, splitCommand, autoDestroy
 import sys
 import os
 from telegram.ext import Updater
@@ -152,7 +152,30 @@ threading.Timer(1, loop).start()
 def private(update, context):
 	update.message.reply_text('Add me to public channel, then use /d_sc to set your douban cookie')
 
+def commandInternal(msg):
+	command, text = splitCommand(msg.text)
+	if matchKey(command, ['/d_sc', 'set_cookie']):
+		return db.setCookie(msg.chat.username, text)
+	if matchKey(command, ['/d_ba', 'blacklist_ba']):
+		return db.blacklistAdd(msg.chat.username, text)
+	if matchKey(command, ['/d_br', 'blacklist_br']):
+		return db.blacklistRemove(msg.chat.username, text)
+	if matchKey(command, ['/d_bl', 'blacklist_list']):
+		return 'blacklist:\n  ' + '  \n'.join(db.getBlacklist(msg.chat.username))
+
+@log_on_fail(debug_group)
+def command(update, context):
+	msg= update.message
+	if not msg.text.startswith('/d'):
+		return
+	r = commandInternal(msg)
+	if not r:
+		return
+	autoDestroy(msg.reply_text(r), 0.1)
+	msg.delete()
+
 tele.dispatcher.add_handler(MessageHandler(Filters.text & Filters.private, private))
+tele.dispatcher.add_handler(MessageHandler(Filters.channel & Filters.command, command))
 
 tele.start_polling()
 tele.idle()
