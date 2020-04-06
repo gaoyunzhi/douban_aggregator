@@ -47,8 +47,6 @@ def getSource(item):
 	if new_status.get('data-sid'):
 		return 'https://www.douban.com/people/%s/status/%s/' % \
 			(new_status['data-uid'], new_status['data-sid'])
-	else:
-		print(item.find('span', class_='created_at').find('a')['href'])
 
 def getCap(quote, url):
 	if '_' in url:
@@ -72,7 +70,7 @@ def getResult(post_link, item):
 	if note or matchKey(post_link, 
 			['https://book.douban.com/review/', 'https://www.douban.com/note/']):
 		note = (note and note['data-url']) or post_link
-		url = export_to_telegraph.export(note, force=True)
+		url = export_to_telegraph.export(note, force=True) or note
 		r.cap = getCap(quote, url)
 		return r
 
