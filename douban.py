@@ -48,7 +48,7 @@ def getSource(item):
 		return 'https://www.douban.com/people/%s/status/%s/' % \
 			(new_status['data-uid'], new_status['data-sid'])
 	else:
-		print('data-sid' in new_status, new_status.attrs)
+		print(new_status)
 
 def getCap(quote, url):
 	if '_' in url:
