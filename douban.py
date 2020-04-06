@@ -88,10 +88,12 @@ def getResult(post_link, item):
 def postTele(douban_channel, item, timer):
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
+	source = source.strip()
+	post_link = post_link.strip()
 
-	if db.exist(douban_channel.username, source.strip()):
+	if db.exist(douban_channel.username, source):
 		return 'existing'
-	if db.exist(douban_channel.username, post_link.strip()):
+	if db.exist(douban_channel.username, post_link):
 		return 'repeated_share'
 
 	result = getResult(post_link, item)
