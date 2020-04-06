@@ -91,9 +91,9 @@ def postTele(douban_channel, item, timer):
 	source = getSource(item) or post_link
 
 	if db.exist(douban_channel.username, source.strip()):
-		return 'repeated_share'
-	if db.exist(douban_channel.username, post_link.strip()):
 		return 'existing'
+	if db.exist(douban_channel.username, post_link.strip()):
+		return 'repeated_share'
 
 	result = getResult(post_link, item)
 	if result:
