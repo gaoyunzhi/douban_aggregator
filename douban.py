@@ -69,13 +69,9 @@ def getResult(post_link, item):
 			return r
 
 	note = item.find('div', class_='note-block')
-	if 'note' in post_link:
-		print('note found: ', not not note)
-		if not note:
-			with open('tmp/note.html', 'w') as f:
-				f.write(item)
-	if note:
-		note = note['data-url']
+	if note or matchKey(post_link, 
+			['https://book.douban.com/review/', 'https://www.douban.com/note/']):
+		note = (note and note['data-url']) or post_link
 		url = export_to_telegraph.export(note, force=True)
 		r.cap = getCap(quote, url)
 		return r
