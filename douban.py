@@ -44,11 +44,8 @@ def getSource(item):
 	new_status = item
 	while 'new-status' not in new_status.get('class'):
 		new_status = new_status.parent
-	for d in new_status.find_all('div'):
-		if d.attrs:
-			url = d.get('data-status-url', '').strip()
-			if url:
-				return url
+	return 'https://www.douban.com/people/%s/status/%s/' % \
+		(new_status['data-uid'], new_status['data-sid'])
 
 def getCap(quote, url):
 	if '_' in url:
