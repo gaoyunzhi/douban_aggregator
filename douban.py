@@ -69,6 +69,8 @@ def getResult(post_link, item):
 			return r
 
 	note = item.find('div', class_='note-block')
+	if 'note' in post_link:
+		print('note found: ', not not note)
 	if note:
 		note = note['data-url']
 		url = export_to_telegraph.export(note, force=True)
@@ -116,6 +118,8 @@ def processChannel(name):
 
 	douban_channel = tele.bot.get_chat('@' + name)
 	for page in range(start, 100):
+		if 'test' in sys.argv:
+			print('page: %d' % page)
 		url = 'https://www.douban.com/?p=' + str(page)
 		items = list(sg.getSoup(url, db.getCookie(name))
 			.find_all('div', class_='status-item'))
