@@ -44,7 +44,7 @@ def getSource(item):
 	new_status = item
 	while 'new-status' not in new_status.get('class'):
 		new_status = new_status.parent
-	if 'data-sid' in new_status:
+	if new_status.get('data-sid'):
 		return 'https://www.douban.com/people/%s/status/%s/' % \
 			(new_status['data-uid'], new_status['data-sid'])
 	else:
