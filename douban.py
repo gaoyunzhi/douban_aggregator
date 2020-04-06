@@ -71,6 +71,8 @@ def getResult(post_link, item):
 	note = item.find('div', class_='note-block')
 	if 'note' in post_link:
 		print('note found: ', not not note)
+		if not note:
+			print(item)
 	if note:
 		note = note['data-url']
 		url = export_to_telegraph.export(note, force=True)
