@@ -98,7 +98,7 @@ def postTele(douban_channel, item, timer):
 
 	result = getResult(post_link, item)
 	if result:
-		timer.wait(len(result.imgs or [1]) * 3)
+		timer.wait(len(result.imgs or [1]) * 10)
 		r = album_sender.send(douban_channel, source, result)
 		db.addToExisting(douban_channel.username, post_link)
 		db.addToExisting(douban_channel.username, source)
