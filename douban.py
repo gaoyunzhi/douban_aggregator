@@ -63,7 +63,6 @@ def getResult(post_link, item):
 		r = web_2_album.get(post_link, force_cache=True)
 		r.cap = quote
 		if r.imgs:
-			print(post_link, r.imgs, r.cap)
 			return r
 
 	note = item.find('div', class_='note-block')
@@ -89,8 +88,13 @@ def getResult(post_link, item):
 		return r
 
 def postTele(douban_channel, item, timer):
+	if not item or not item.find('span', class_='created_at'):
+		if '仅自己可见' in str(item):
+			return # 被审核掉的广播
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
+	if source != post_link:
+		print(source, post_link)
 	source = source.strip()
 	post_link = post_link.strip()
 
@@ -156,7 +160,7 @@ def loopImp():
 	removeOldFiles('tmp_image')
 	sg.reset()
 	for name in db.getChannels():
-		if name == 'web_record':
+		if name == 'today_read':
 			url_prefix = 'https://www.douban.com/people/gyz/statuses'
 		else:
 			url_prefix = 'https://www.douban.com/'
