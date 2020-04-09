@@ -31,7 +31,7 @@ def dataCount(item):
 			yield r
 
 def wantSee(item, page, channel_name):
-	if 'people/gyz' in str(item.parent):
+	if matchKey(str(item.parent), ['people/gyz', '4898454']):
 		return True
 	if matchKey(str(item), db.getBlacklist(channel_name)):
 		return False
@@ -56,14 +56,9 @@ def getCap(quote, url):
 def getResult(post_link, item):
 	raw_quote = item.find('blockquote') or ''
 	quote = export_to_telegraph.exportAllInText(raw_quote)
+	quote = quote.strip().strip('更多转发...').strip()
 
 	r = web_2_album.Result()
-
-	if '/status/' in post_link:
-		r = web_2_album.get(post_link, force_cache=True)
-		r.cap = quote
-		if r.imgs:
-			return r
 
 	note = item.find('div', class_='note-block')
 	if (note and note.get('data-url')) or matchKey(post_link, 
@@ -73,10 +68,6 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
-	if quote and raw_quote.find('a', title=True, href=True):
-		r.cap = quote
-		return r
-
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
@@ -84,10 +75,22 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
+	if '/status/' in post_link:
+		r = web_2_album.get(post_link, force_cache=True)
+		r.cap = quote
+		if r.imgs:
+			return r
+
+	if quote and raw_quote.find('a', title=True, href=True):
+		r.cap = quote
+		return r
+
 def postTele(douban_channel, item, timer):
 	if not item or not item.find('span', class_='created_at'):
 		if '仅自己可见' in str(item):
 			return # 被审核掉的广播
+		print('no created at')
+		print(item)
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
 	if source != post_link:
