@@ -60,6 +60,9 @@ def getResult(post_link, item):
 
 	r = web_2_album.Result()
 
+	if 'useless_project_discussion' in str(item):
+		print(1)
+
 	note = item.find('div', class_='note-block')
 	if (note and note.get('data-url')) or matchKey(post_link, 
 			['https://book.douban.com/review/', 'https://www.douban.com/note/']):
@@ -68,6 +71,9 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
+	if 'useless_project_discussion' in str(item):
+		print(2)
+
 	if item.find('div', class_='url-block'):
 		url = item.find('div', class_='url-block')
 		url = url.find('a')['href']
@@ -75,15 +81,24 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
+	if 'useless_project_discussion' in str(item):
+		print(3)
+
 	if '/status/' in post_link:
 		r = web_2_album.get(post_link, force_cache=True)
 		r.cap = quote
 		if r.imgs:
 			return r
 
+	if 'useless_project_discussion' in str(item):
+		print(4)
+
 	if quote and raw_quote.find('a', title=True, href=True):
 		r.cap = quote
 		return r
+
+	if 'useless_project_discussion' in str(item):
+		print(5)
 
 def postTele(douban_channel, item, timer):
 	if not item or not item.find('span', class_='created_at'):
@@ -142,7 +157,7 @@ def processChannel(name, url_prefix):
 				existing += 1
 			elif r == 'sent':
 				existing = 0
-		if existing > 10 or page * existing > 200:
+		if (existing > 10 or page * existing > 200) and 'once' not in sys.argv:
 			break
 	print('channel %s finished by visiting %d page' % (name, page))
 
