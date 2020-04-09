@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram_util import matchKey, cutCaption, clearUrl, splitCommand, autoDestroy, log_on_fail
+from telegram_util import matchKey, cutCaption, clearUrl, splitCommand, autoDestroy, log_on_fail, cleanUrl
 import sys
 import os
 from telegram.ext import Updater, MessageHandler, Filters
@@ -56,7 +56,8 @@ def getCap(quote, url):
 def getResult(post_link, item):
 	raw_quote = item.find('blockquote') or ''
 	quote = export_to_telegraph.exportAllInText(raw_quote)
-	quote = quote.strip().strip('更多转发...').strip()
+	quote = cleanUrl(quote.strip().strip('更多转发...').strip()).replace(
+		'\n\n', '\n')
 
 	r = web_2_album.Result()
 
@@ -75,12 +76,14 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
-	print('additional fetch')
 	if '/status/' in post_link:
 		r = web_2_album.get(post_link, force_cache=True)
-		r.cap = quote
+		if len(quote) * 3 > len(r.cap):
+			r.cap = quote
 		if r.imgs:
 			return r
+
+	print('useless additional fetch', post_link)
 
 	if quote and raw_quote.find('a', title=True, href=True):
 		r.cap = quote
@@ -96,8 +99,6 @@ def postTele(douban_channel, item, timer):
 		return
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
-	if source != post_link:
-		print(source, post_link)
 	source = source.strip()
 	post_link = post_link.strip()
 
