@@ -108,7 +108,7 @@ def postTele(douban_channel, item, timer):
 		return 'sent'
 
 @log_on_fail(debug_group)
-def processChannel(name):
+def processChannel(name, url_prefix):
 	# TODO: revisit fetch wrong status issue
 	existing = 0
 	try:
@@ -122,7 +122,7 @@ def processChannel(name):
 	for page in range(start, 100):
 		if 'test' in sys.argv:
 			print('page: %d' % page)
-		url = 'https://www.douban.com/?p=' + str(page)
+		url = url_prefix + '?p=' + str(page)
 		items = list(sg.getSoup(url, db.getCookie(name))
 			.find_all('div', class_='status-item'))
 		if not items:
@@ -156,13 +156,15 @@ def loopImp():
 	removeOldFiles('tmp_image')
 	sg.reset()
 	for name in db.getChannels():
-		processChannel(name)
+		if name == 'web_record':
+			url_prefix = 'https://www.douban.com/people/gyz/statuses'
+		else:
+			url_prefix = 'https://www.douban.com/'
+		processChannel(name, url_prefix)
 
 def loop():
 	loopImp()
 	threading.Timer(60 * 60 * 2, loop).start() 
-
-threading.Timer(1, loop).start()
 
 @log_on_fail(debug_group)
 def private(update, context):
@@ -190,10 +192,13 @@ def command(update, context):
 	autoDestroy(msg.reply_text(r), 0.1)
 	msg.delete()
 
-tele.dispatcher.add_handler(MessageHandler(
-	Filters.text & Filters.private, private))
-tele.dispatcher.add_handler(MessageHandler(
-	Filters.update.channel_post & Filters.command, command))
-
-tele.start_polling()
-tele.idle()
+if not 'once' in sys.argv:
+	tele.dispatcher.add_handler(MessageHandler(
+		Filters.text & Filters.private, private))
+	tele.dispatcher.add_handler(MessageHandler(
+		Filters.update.channel_post & Filters.command, command))
+	tele.start_polling()
+	tele.idle()
+	threading.Timer(1, loop).start()
+else:
+	loopImp()
