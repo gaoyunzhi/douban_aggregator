@@ -75,6 +75,7 @@ def getResult(post_link, item):
 		r.cap = getCap(quote, url)
 		return r
 
+	print('additional fetch')
 	if '/status/' in post_link:
 		r = web_2_album.get(post_link, force_cache=True)
 		r.cap = quote
@@ -91,6 +92,8 @@ def postTele(douban_channel, item, timer):
 			return # 被审核掉的广播
 		print('no created at')
 		print(item)
+		# see how often this happen...
+		return
 	post_link = item.find('span', class_='created_at').find('a')['href']
 	source = getSource(item) or post_link
 	if source != post_link:
@@ -105,7 +108,7 @@ def postTele(douban_channel, item, timer):
 
 	result = getResult(post_link, item)
 	if result:
-		timer.wait(len(result.imgs or [1]) * 15)
+		timer.wait(len(result.imgs or [1]) * 10)
 		r = album_sender.send(douban_channel, source, result)
 		db.addToExisting(douban_channel.username, post_link)
 		db.addToExisting(douban_channel.username, source)
