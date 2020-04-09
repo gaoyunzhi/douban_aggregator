@@ -123,9 +123,9 @@ def processChannel(name, url_prefix):
 
 	douban_channel = tele.bot.get_chat('@' + name)
 	if 'status' in url_prefix:
-		page_range = range(1, 100)
-	else:
 		page_range = range(50, 0, -1)
+	else:
+		page_range = range(1, 100)
 	for page in page_range:
 		if 'test' in sys.argv:
 			print('page: %d' % page)
