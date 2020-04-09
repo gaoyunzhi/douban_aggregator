@@ -117,23 +117,22 @@ def postTele(douban_channel, item, timer):
 
 @log_on_fail(debug_group)
 def processChannel(name, url_prefix):
-	# TODO: revisit fetch wrong status issue
 	existing = 0
-	try:
-		start = int(sys.argv[1])
-	except:
-		start = 1
 	print('start processing %s' % name)
 	timer = Timer()
 
 	douban_channel = tele.bot.get_chat('@' + name)
-	for page in range(start, 100):
+	if 'status' in url_prefix:
+		page_range = range(1, 100)
+	else:
+		page_range = range(50, 0, -1)
+	for page in page_range:
 		if 'test' in sys.argv:
 			print('page: %d' % page)
 		url = url_prefix + '?p=' + str(page)
 		items = list(sg.getSoup(url, db.getCookie(name))
 			.find_all('div', class_='status-item'))
-		if not items:
+		if not items and 'status' not in url_prefix:
 			debug_group.send_message('Cookie expired for channel: %s' % name)
 			return
 		for item in items:
