@@ -163,6 +163,8 @@ def loopImp():
 	for name in db.getChannels():
 		if name == 'today_read':
 			url_prefix = 'https://www.douban.com/people/gyz/statuses'
+		elif name == 'douban_one':
+			url_prefix = 'https://www.douban.com/people/139444387/statuses'
 		else:
 			url_prefix = 'https://www.douban.com/'
 		processChannel(name, url_prefix)
@@ -206,4 +208,4 @@ if not 'once' in sys.argv:
 	tele.idle()
 	threading.Timer(1, loop).start()
 else:
-	loopImp()
+	threading.Timer(60 * 60 * 12, loopImp).start() 
