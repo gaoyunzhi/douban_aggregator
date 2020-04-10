@@ -208,4 +208,4 @@ if not 'once' in sys.argv:
 	tele.idle()
 	threading.Timer(1, loop).start()
 else:
-	threading.Timer(60 * 60 * 12, loopImp).start() 
+	loopImp()
