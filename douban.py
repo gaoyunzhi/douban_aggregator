@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram_util import matchKey, cutCaption, clearUrl, splitCommand, autoDestroy, log_on_fail, cleanUrl
+from telegram_util import matchKey, cutCaption, clearUrl, splitCommand, autoDestroy, log_on_fail, compactText
 import sys
 import os
 from telegram.ext import Updater, MessageHandler, Filters
@@ -56,7 +56,7 @@ def getCap(quote, url):
 def getResult(post_link, item):
 	raw_quote = item.find('blockquote') or ''
 	quote = export_to_telegraph.exportAllInText(raw_quote)
-	quote = cleanUrl(quote).strip('更多转发...').strip()
+	quote = compactText(quote).strip('更多转发...').strip()
 
 	r = web_2_album.Result()
 
