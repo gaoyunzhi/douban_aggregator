@@ -13,7 +13,9 @@ def setup():
 	if 'debug' in addtional_arg or 'skip' in addtional_arg or 'once' in addtional_arg:
 		os.system(command + ' test')
 	else:
-		os.system('nohup %s & tail -F nohup.out' % command)
+		os.system('nohup %s &' % command)
+		if 'notail' not in addtional_arg:
+			os.system('touch nohup.out && tail -F nohup.out')
 
 if __name__ == '__main__':
 	setup()
