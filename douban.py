@@ -156,6 +156,7 @@ def removeOldFiles(d):
 	except:
 		pass
 
+@log_on_fail(debug_group)
 def loopImp():
 	removeOldFiles('tmp')
 	removeOldFiles('tmp_image')
