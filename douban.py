@@ -110,7 +110,7 @@ def postTele(douban_channel, item, timer):
 		timer.wait(len(result.imgs or [1]) * 10)
 		try:
 			r = album_sender.send(douban_channel, source, result)
-		except Exception e:
+		except Exception as e:
 			print(e)
 			return
 		db.addToExisting(douban_channel.username, post_link)
