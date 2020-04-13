@@ -201,12 +201,12 @@ def command(update, context):
 	msg.delete()
 
 if 'once' not in sys.argv:
+	threading.Timer(1, loop).start()
 	tele.dispatcher.add_handler(MessageHandler(
 		Filters.text & Filters.private, private))
 	tele.dispatcher.add_handler(MessageHandler(
 		Filters.update.channel_post & Filters.command, command))
 	tele.start_polling()
 	tele.idle()
-	threading.Timer(1, loop).start()
 else:
 	loopImp()
