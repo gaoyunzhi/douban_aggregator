@@ -200,7 +200,7 @@ def command(update, context):
 	autoDestroy(msg.reply_text(r), 0.1)
 	msg.delete()
 
-if not 'once' in sys.argv:
+if 'once' not in sys.argv:
 	tele.dispatcher.add_handler(MessageHandler(
 		Filters.text & Filters.private, private))
 	tele.dispatcher.add_handler(MessageHandler(
