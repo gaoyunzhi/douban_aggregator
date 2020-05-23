@@ -81,8 +81,6 @@ def getResult(post_link, item):
 		if r.imgs:
 			return r
 
-	print('useless additional fetch', post_link)
-
 	if quote and raw_quote.find('a', title=True, href=True):
 		r.cap = quote
 		return r
