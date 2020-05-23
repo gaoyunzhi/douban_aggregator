@@ -138,6 +138,7 @@ def processChannel(name, url_prefix):
 		page_range = range(50, 0, -1)
 	else:
 		page_range = range(1, 100)
+	global_min_created_at = 'z'
 	for page in page_range:
 		if 'test' in sys.argv:
 			print('page: %d' % page)
@@ -159,11 +160,12 @@ def processChannel(name, url_prefix):
 				existing += 1
 			elif r == 'sent':
 				existing = 0
+		global_min_created_at = min(global_min_created_at, min_created_at)
 		if (existing > 10 or page * existing > 200) and 'once' not in sys.argv:
 			break
 		if min_created_at > last_loop_time.get(name, 'z'):
 			break
-	last_loop_time[name] = min_created_at
+	last_loop_time[name] = global_min_created_at
 	print('channel %s finished by visiting %d page' % (name, page))
 
 def removeOldFiles(d):
