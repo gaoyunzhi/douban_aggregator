@@ -21,6 +21,8 @@ export_to_telegraph.token = credential['telegraph_token']
 tele = Updater(credential['bot_token'], use_context=True)
 debug_group = tele.bot.get_chat(-1001198682178)
 
+last_loop_time = {}
+
 sg = SoupGet()
 db = DB()
 
@@ -38,7 +40,9 @@ def wantSee(item, page, channel_name):
 	require = 120 + page
 	if 'people/renjiananhuo' in str(item.parent):
 		require *= 4 # 这人太火，发什么都有人点赞。。。
-	return sum(dataCount(item)) > require
+	if sum(dataCount(item)) > require:
+		return True
+	return False
 
 def getSource(item):
 	new_status = item
@@ -84,6 +88,14 @@ def getResult(post_link, item):
 	if quote and raw_quote.find('a', title=True, href=True):
 		r.cap = quote
 		return r
+
+def findCreatedAt(item):
+	if not 'item':
+		return 'z'
+	create_block = item.find('span', class_='created_at')
+	if not create_block:
+		return 'z'
+	return create_block.get('title', 'z')
 
 def postTele(douban_channel, item, timer):
 	if not item or not item.find('span', class_='created_at'):
@@ -135,7 +147,9 @@ def processChannel(name, url_prefix):
 		if not items and 'status' not in url_prefix:
 			debug_group.send_message('Cookie expired for channel: %s' % name)
 			return
+		min_created_at = 'z'
 		for item in items:
+			min_created_at = min(min_created_at, findCreatedAt(item))
 			if not wantSee(item, page, name):
 				continue
 			r = postTele(douban_channel, item, timer)
@@ -147,6 +161,9 @@ def processChannel(name, url_prefix):
 				existing = 0
 		if (existing > 10 or page * existing > 200) and 'once' not in sys.argv:
 			break
+		if min_created_at > last_loop_time.get(name, 'z'):
+			break
+	last_loop_time[name] = min_created_at
 	print('channel %s finished by visiting %d page' % (name, page))
 
 def removeOldFiles(d):
@@ -161,7 +178,6 @@ def removeOldFiles(d):
 @log_on_fail(debug_group)
 def loopImp():
 	removeOldFiles('tmp')
-	removeOldFiles('tmp_image')
 	sg.reset()
 	for name in db.getChannels():
 		if name == 'today_read':
