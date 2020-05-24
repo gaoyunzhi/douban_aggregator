@@ -91,11 +91,11 @@ def getResult(post_link, item):
 
 def findCreatedAt(item):
 	if not 'item':
-		return 'z'
+		return None
 	create_block = item.find('span', class_='created_at')
 	if not create_block:
-		return 'z'
-	return create_block.get('title', 'z')
+		return None
+	return create_block.get('title')
 
 def postTele(douban_channel, item, timer):
 	if not item or not item.find('span', class_='created_at'):
@@ -138,7 +138,7 @@ def processChannel(name, url_prefix):
 		page_range = range(50, 0, -1)
 	else:
 		page_range = range(1, 100)
-	global_min_created_at = 'z'
+	global_max_created_at = ''
 	for page in page_range:
 		if 'test' in sys.argv:
 			print('page: %d' % page)
@@ -148,9 +148,11 @@ def processChannel(name, url_prefix):
 		if not items and 'status' not in url_prefix:
 			debug_group.send_message('Cookie expired for channel: %s' % name)
 			return
-		min_created_at = 'z'
+		max_created_at = ''
 		for item in items:
-			min_created_at = min(min_created_at, findCreatedAt(item))
+			created_at = findCreatedAt(item)
+			if created_at:
+				max_created_at = max(max_created_at, created_at)
 			if not wantSee(item, page, name):
 				continue
 			r = postTele(douban_channel, item, timer)
@@ -160,13 +162,12 @@ def processChannel(name, url_prefix):
 				existing += 1
 			elif r == 'sent':
 				existing = 0
-		global_min_created_at = min(global_min_created_at, min_created_at)
-		debug_group.send_message('global_min_created_at: ' +  global_min_created_at)
+		global_max_created_at = max(global_max_created_at, max_created_at)
 		if (existing > 10 or page * existing > 200) and 'once' not in sys.argv:
 			break
-		if min_created_at > last_loop_time.get(name, 'z'):
+		if max_created_at < last_loop_time.get(name, ''):
 			break
-	last_loop_time[name] = global_min_created_at
+	last_loop_time[name] = global_max_created_at
 	print('channel %s finished by visiting %d page' % (name, page))
 
 def removeOldFiles(d):
