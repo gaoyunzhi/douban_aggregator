@@ -161,6 +161,7 @@ def processChannel(name, url_prefix):
 			elif r == 'sent':
 				existing = 0
 		global_min_created_at = min(global_min_created_at, min_created_at)
+		debug_group.send_message('global_min_created_at: ' +  global_min_created_at)
 		if (existing > 10 or page * existing > 200) and 'once' not in sys.argv:
 			break
 		if min_created_at > last_loop_time.get(name, 'z'):
