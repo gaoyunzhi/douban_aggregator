@@ -26,6 +26,6 @@ class SoupGet(object):
 
 	def getSoup(self, url, cookie):
 		self.num_requests += 1
-		wait = min(random.random() * 10, self.num_requests / 3 * random.random())
+		wait = min(random.random() * 20, self.num_requests * random.random())
 		self.timer.wait(wait)
 		return BeautifulSoup(cached_url.get(url, {'cookie': cookie}), 'html.parser')
