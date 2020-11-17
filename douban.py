@@ -25,6 +25,7 @@ last_loop_time = {}
 
 sg = SoupGet()
 db = DB()
+db._save()
 
 def dataCount(item):
 	for x in item.find_all('span', class_='count'):
