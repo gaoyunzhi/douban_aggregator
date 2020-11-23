@@ -60,6 +60,8 @@ def getCap(quote, url):
 def getResult(post_link, item):
 	raw_quote = item.find('blockquote') or ''
 	quote = export_to_telegraph.exportAllInText(raw_quote)
+	print('raw_quote', str(raw_quote))
+	print('quote', str(quote))
 	quote = compactText(quote).strip('更多转发...').strip()
 
 	r = web_2_album.Result()
