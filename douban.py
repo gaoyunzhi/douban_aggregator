@@ -85,7 +85,7 @@ def getResult(post_link, item):
 	if '/status/' in post_link:
 		r = web_2_album.get(post_link, force_cache=True)
 		r.cap = quote
-		if r.imgs:
+		if r.imgs or r.video:
 			return r
 
 	if quote and raw_quote.find('a', title=True, href=True):
