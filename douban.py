@@ -59,6 +59,11 @@ def getCap(quote, url):
 
 def getResult(post_link, item):
 	raw_quote = item.find('blockquote') or ''
+	topic = item.find('p', class_='topic-say')
+	topic = topic and topic.text
+	if topic and raw_quote:
+		raw_quote.insert(0, '【%s】' % topic)
+		
 	quote = export_to_telegraph.exportAllInText(raw_quote)
 	quote = quote.replace('\n', '\n\n')
 	for _ in range(5):
