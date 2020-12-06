@@ -171,7 +171,7 @@ def processChannel(name, url_prefix):
 			elif r == 'sent':
 				existing = 0
 		global_max_created_at = max(global_max_created_at, max_created_at)
-		if (existing > 10 or page * existing > 200) and 'once' not in sys.argv:
+		if existing > 10 or page * existing > 200:
 			break
 		if max_created_at < last_loop_time.get(name, ''):
 			break
@@ -230,13 +230,14 @@ def command(update, context):
 	autoDestroy(msg.reply_text(r), 0.1)
 	msg.delete()
 
-if 'once' not in sys.argv:
-	threading.Timer(1, loop).start()
+if __name__ == '__main__':
+	if 'debug' in sys.argv:
+		threading.Timer(1, loop).start()
+	else:
+		threading.Timer(60 * 60, loop).start()
 	tele.dispatcher.add_handler(MessageHandler(
 		Filters.text & Filters.private, private))
 	tele.dispatcher.add_handler(MessageHandler(
 		Filters.update.channel_post & Filters.command, command))
 	tele.start_polling()
 	tele.idle()
-else:
-	loopImp()

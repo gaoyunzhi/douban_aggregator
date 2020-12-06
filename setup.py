@@ -10,7 +10,7 @@ def setup():
 		return 
 	addtional_arg = ' '.join(sys.argv[1:])
 	command = 'python3 -u douban.py %s' % addtional_arg
-	if 'debug' in addtional_arg or 'skip' in addtional_arg or 'once' in addtional_arg:
+	if 'debug' in addtional_arg:
 		os.system(command + ' test')
 	else:
 		os.system('nohup %s &' % command)
