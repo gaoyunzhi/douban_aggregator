@@ -1,6 +1,7 @@
 douban_read:
   blacklist:
   - '195096067'
+  - '32635346'
   - '72886662'
   - kingsamchen
   - lowdive
@@ -27,6 +28,7 @@ douban_read:
   - 猛汉世雄
   - 诚心请求
   - 请求锦鲤
+  - 豆瓣转运大神
   - 转发抽奖
   - 转发评论
   - 转发赠书
